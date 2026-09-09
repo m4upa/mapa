@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Atlas &mdash; quiz geograficzny</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+  :root{
+    --ocean-deep:#16273f;
+    --ocean:#20334f;
+    --ocean-light:#2c4160;
+    --parchment:#f4ede0;
+    --parchment-dim:#e8dfcc;
+    --ink:#1e2a1f;
+    --land:#8fae8a;
+    --land-hover:#a5c29c;
+    --land-selected:#d8c98a;
+    --coral:#c1502e;
+    --coral-dark:#9c3d22;
+    --moss:#3f7a52;
+    --moss-dark:#2f5e3f;
+    --gold:#c99a3e;
+    --border-radius:14px;
+    --shadow-card: 0 8px 24px rgba(15, 23, 34, 0.35);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    width:100%; height:100%;
+    background: var(--ocean-deep);
+    color: var(--parchment);
+    font-family:'Source Sans 3', sans-serif;
+    overflow-x:hidden;
+  }
+
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.05), transparent 55%),
+      radial-gradient(ellipse at 90% 80%, rgba(255,255,255,0.04), transparent 50%),
+      linear-gradient(160deg, var(--ocean-deep), var(--ocean) 60%, var(--ocean-light));
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    letter-spacing:0.2px;
+  }
+
+  .app{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    width:100%;
+  }
+  @media (min-width: 640px){
+    .app{ padding-top: 44px; }
+    .home-hero{ margin: 30px 0 40px; }
+  }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 22px;
+    gap:12px;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand .mark{
+    font-family:'Fraunces', serif;
+    font-size:1.7rem;
+    font-weight:700;
+    color: var(--parchment);
+  }
+  .brand .tag{
+    font-size:0.82rem;
+    color: rgba(244,237,224,0.55);
+    font-style: italic;
+  }
+  .back-btn{
+    background: rgba(244,237,224,0.08);
+    border: 1px solid rgba(244,237,224,0.18);
+    color: var(--parchment);
+    font-family:'Source Sans 3', sans-serif;
+    font-size:0.9rem;
+    padding: 9px 16px;
+    border-radius: 999px;
+    cursor:pointer;
+    display:none;
+    align-items:center;
+    gap:6px;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  .back-btn:hover{ background: rgba(244,237,224,0.16); }
+  .back-btn:active{ transform: scale(0.97); }
+  .back-btn.show{ display:inline-flex; }
+
+  /* ---------- SCREENS ---------- */
+  .screen{ display:none; flex:1; flex-direction:column; }
+  .screen.active{ display:flex; }
+  .fade-in{ animation: fadeIn 0.35s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- HOME ---------- */
+  .home-hero{
+    text-align:center;
+    margin: 18px 0 34px;
+  }
+  .home-hero h1{
+    font-size: clamp(2rem, 6vw, 2.9rem);
+    margin: 0 0 10px;
+    color: var(--parchment);
+  }
+  .home-hero p{
+    color: rgba(244,237,224,0.62);
+    font-size: 1rem;
+    margin:0;
+  }
+
+  .choice-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .choice-grid.three-up{
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  @media (max-width: 780px){
+    .choice-grid.three-up{ grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px){
+    .choice-grid{ grid-template-columns: 1fr; }
+    .choice-grid.three-up{ grid-template-columns: 1fr; }
+  }
+
+  .choice-card{
+    background: linear-gradient(155deg, var(--parchment), var(--parchment-dim));
+    color: var(--ink);
+    border-radius: var(--border-radius);
+    padding: 28px 22px;
+    cursor:pointer;
+    border: none;
+    text-align:left;
+    box-shadow: var(--shadow-card);
+    position:relative;
+    overflow:hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    font-family:'Source Sans 3', sans-serif;
+  }
+  .choice-card:hover{ transform: translateY(-4px); box-shadow: 0 14px 30px rgba(15,23,34,0.45); }
+  .choice-card:active{ transform: translateY(-1px); }
+  .choice-card .icon{
+    font-size: 2.1rem;
+    margin-bottom: 14px;
+    display:block;
+  }
+  .choice-card h2{
+    margin: 0 0 8px;
+    font-size: 1.5rem;
+    color: var(--ink);
+  }
+  .choice-card p{
+    margin:0;
+    font-size:0.92rem;
+    color: rgba(30,42,31,0.65);
+    line-height:1.4;
+  }
+  .choice-card .stripe{
+    position:absolute; left:0; top:0; bottom:0; width:6px;
+    background: var(--moss);
+  }
+  .choice-card.capitals .stripe{ background: var(--coral); }
+  .choice-card.snippet .stripe{ background: var(--gold); }
+
+  /* ---------- MODE SELECT ---------- */
+  .mode-select{
+    text-align:center;
+    padding-top: 10px;
+  }
+  .mode-select h2{
+    font-size: 1.7rem;
+    margin: 4px 0 6px;
+  }
+  .mode-select .sub{
+    color: rgba(244,237,224,0.6);
+    margin: 0 0 28px;
+    font-size:0.95rem;
+  }
+  .mode-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .mode-btn{
+    background: rgba(244,237,224,0.06);
+    border: 1px solid rgba(244,237,224,0.16);
+    color: var(--parchment);
+    border-radius: 12px;
+    padding: 18px 20px;
+    text-align:left;
+    cursor:pointer;
+    font-family:'Source Sans 3', sans-serif;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .mode-btn:hover{ background: rgba(244,237,224,0.11); border-color: rgba(244,237,224,0.3); transform: translateX(3px); }
+  .mode-btn .num{
+    font-family:'Fraunces', serif;
+    font-size:1.5rem;
+    color: var(--gold);
+    min-width: 30px;
+  }
+  .mode-btn .txt h3{ margin:0 0 3px; font-size:1.08rem; }
+  .mode-btn .txt p{ margin:0; font-size:0.85rem; color: rgba(244,237,224,0.55); }
+
+  /* ---------- GAME HEADER (shared) ---------- */
+  .game-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .prompt-box{
+    background: rgba(244,237,224,0.07);
+    border: 1px solid rgba(244,237,224,0.16);
+    border-radius: 12px;
+    padding: 14px 20px;
+    flex:1;
+    min-width: 220px;
+  }
+  .prompt-box .label{
+    font-size:0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: rgba(244,237,224,0.45);
+    margin-bottom:4px;
+  }
+  .prompt-box .value{
+    font-family:'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight:600;
+    color: var(--parchment);
+  }
+  .score-box{
+    display:flex;
+    gap: 10px;
+  }
+  .pill{
+    background: rgba(244,237,224,0.07);
+    border: 1px solid rgba(244,237,224,0.16);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size:0.85rem;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    white-space:nowrap;
+  }
+  .pill.correct{ color:#a8d9b4; }
+  .pill.wrong{ color:#e6a08c; }
+  .pill .n{ font-family:'Fraunces', serif; font-weight:600; font-size:1.05rem; }
+
+  /* ---------- MAP AREA ---------- */
+  .map-wrap{
+    background: linear-gradient(170deg, #cfe3ef, #b9d5e6);
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: inset 0 2px 14px rgba(0,0,0,0.15), var(--shadow-card);
+    position:relative;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    aspect-ratio: 219 / 214;
+    max-height: 68vh;
+    width:100%;
+    margin: 0 auto;
+  }
+  #europe-svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .country{
+    fill: var(--land);
+    stroke: #e9f2f5;
+    stroke-width: 0.5;
+    cursor:pointer;
+    transition: fill 0.15s ease;
+  }
+  .country:hover{ fill: var(--land-hover); }
+  .country.correct-flash{ fill: var(--moss) !important; }
+  .country.wrong-flash{ fill: var(--coral) !important; }
+  .country.disabled{ cursor:default; pointer-events:none; }
+  .micro-state{ stroke-width:0.4; }
+  .micro-group{ cursor:pointer; }
+  .micro-hit{
+    fill: transparent;
+    stroke: none;
+    pointer-events: all;
+  }
+  .micro-group.disabled{ pointer-events:none; }
+
+  .map-feedback{
+    position:absolute;
+    top:14px; left:50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: var(--ink);
+    color: var(--parchment);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size:0.9rem;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+  }
+  .map-feedback.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+  .map-feedback.ok{ background: var(--moss-dark); }
+  .map-feedback.bad{ background: var(--coral-dark); }
+
+  .map-tooltip{
+    position:absolute;
+    background: var(--ink);
+    color: var(--parchment);
+    padding:5px 11px;
+    border-radius:8px;
+    font-size:0.82rem;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity 0.1s ease;
+    transform: translate(-50%, -130%);
+    white-space:nowrap;
+    z-index:5;
+  }
+  .map-tooltip.show{ opacity:1; }
+
+  .map-zoom-controls{
+    position:absolute;
+    bottom:14px; right:14px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    z-index:6;
+  }
+  .zoom-btn{
+    width:36px; height:36px;
+    border-radius:10px;
+    border:1px solid rgba(30,42,31,0.18);
+    background: rgba(244,237,224,0.92);
+    color: var(--ink);
+    font-size:1.15rem;
+    font-weight:700;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 0 4px 10px rgba(15,23,34,0.25);
+    transition: background 0.15s ease, transform 0.15s ease;
+    line-height:1;
+    padding:0;
+  }
+  .zoom-btn:hover{ background:#fff; }
+  .zoom-btn:active{ transform: scale(0.94); }
+  .zoom-btn.reset{ font-size:0.8rem; }
+  #europe-svg.zoomed{ cursor: grab; }
+  #europe-svg.zoomed.dragging{ cursor: grabbing; }
+
+  /* ---------- END SCREEN ---------- */
+  .end-panel{
+    text-align:center;
+    background: rgba(244,237,224,0.07);
+    border: 1px solid rgba(244,237,224,0.16);
+    border-radius: 16px;
+    padding: 40px 26px;
+    margin: auto 0;
+  }
+  .end-panel .big-num{
+    font-family:'Fraunces', serif;
+    font-size: 3.2rem;
+    font-weight:700;
+    color: var(--gold);
+    margin: 6px 0 2px;
+  }
+  .end-panel h2{ margin:0 0 4px; font-size:1.4rem; }
+  .end-panel p{ color: rgba(244,237,224,0.6); margin: 0 0 22px; }
+  .end-actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+  .btn{
+    font-family:'Source Sans 3', sans-serif;
+    font-weight:600;
+    font-size:0.92rem;
+    padding: 12px 24px;
+    border-radius: 999px;
+    border:none;
+    cursor:pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .btn:active{ transform: scale(0.96); }
+  .btn-primary{ background: var(--gold); color: var(--ink); }
+  .btn-primary:hover{ opacity:0.9; }
+  .btn-ghost{ background: rgba(244,237,224,0.1); color: var(--parchment); border:1px solid rgba(244,237,224,0.25); }
+  .btn-ghost:hover{ background: rgba(244,237,224,0.18); }
+
+  /* ---------- CAPITALS: LEARN MODE (flashcards) ---------- */
+  .flash-stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: 26px;
+    padding: 20px 0;
+  }
+  .flash-country{
+    font-family:'Fraunces', serif;
+    font-size: clamp(2rem, 7vw, 3rem);
+    font-weight:700;
+    text-align:center;
+  }
+  .flash-card{
+    width: min(380px, 88vw);
+    height: 190px;
+    perspective: 1200px;
+    cursor:pointer;
+  }
+  .flash-card-inner{
+    position:relative;
+    width:100%; height:100%;
+    transition: transform 0.5s cubic-bezier(.2,.9,.3,1);
+    transform-style: preserve-3d;
+  }
+  .flash-card.flipped .flash-card-inner{ transform: rotateY(180deg); }
+  .flash-face{
+    position:absolute; inset:0;
+    border-radius: 16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    backface-visibility:hidden;
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+    text-align:center;
+  }
+  .flash-front{
+    background: linear-gradient(155deg, #2c4160, #1b2a4a);
+    border: 1.5px dashed rgba(244,237,224,0.35);
+  }
+  .flash-front .hint{
+    color: rgba(244,237,224,0.55);
+    font-size:0.85rem;
+  }
+  .flash-front .hint-icon{ font-size:1.8rem; margin-bottom:10px; }
+  .flash-back{
+    background: linear-gradient(155deg, var(--parchment), var(--parchment-dim));
+    color: var(--ink);
+    transform: rotateY(180deg);
+  }
+  .flash-back .label{
+    font-size:0.75rem;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    color: rgba(30,42,31,0.5);
+    margin-bottom:6px;
+  }
+  .flash-back .cap-name{
+    font-family:'Fraunces', serif;
+    font-size:1.9rem;
+    font-weight:700;
+  }
+  .flash-nav{
+    display:flex;
+    gap:14px;
+    align-items:center;
+  }
+  .flash-progress{
+    color: rgba(244,237,224,0.5);
+    font-size:0.85rem;
+  }
+
+  /* ---------- CAPITALS: TEST MODE (typing) ---------- */
+  .type-stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: 22px;
+    padding: 20px 0;
+  }
+  .type-country{
+    font-family:'Fraunces', serif;
+    font-size: clamp(1.9rem, 6vw, 2.6rem);
+    font-weight:700;
+    text-align:center;
+  }
+  .type-sub{
+    color: rgba(244,237,224,0.5);
+    font-size:0.9rem;
+    margin-top:-14px;
+  }
+  .type-form{
+    display:flex;
+    gap:10px;
+    width: min(420px, 90vw);
+  }
+  .type-input{
+    flex:1;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 2px solid rgba(244,237,224,0.25);
+    background: rgba(244,237,224,0.08);
+    color: var(--parchment);
+    font-size:1.05rem;
+    font-family:'Source Sans 3', sans-serif;
+    outline:none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .type-input:focus{ border-color: var(--gold); background: rgba(244,237,224,0.12); }
+  .type-input.correct{ border-color: var(--moss); background: rgba(63,122,82,0.25); }
+  .type-input.wrong{ border-color: var(--coral); background: rgba(193,80,46,0.25); }
+  .type-submit{
+    padding: 14px 22px;
+    border-radius: 12px;
+    border:none;
+    background: var(--gold);
+    color: var(--ink);
+    font-weight:700;
+    cursor:pointer;
+    font-size:1rem;
+  }
+  .type-submit:active{ transform: scale(0.96); }
+  .type-feedback{
+    min-height: 26px;
+    font-size:0.95rem;
+    font-weight:600;
+    text-align:center;
+  }
+  .type-feedback.ok{ color:#a8d9b4; }
+  .type-feedback.bad{ color:#e6a08c; }
+
+  /* ---------- SNIPPET MODE (map crop guessing) ---------- */
+  .snippet-frame{
+    width: min(320px, 78vw);
+    height: 220px;
+    border-radius: 16px;
+    overflow:hidden;
+    background: linear-gradient(170deg, #cfe3ef, #b9d5e6);
+    box-shadow: inset 0 2px 14px rgba(0,0,0,0.15), var(--shadow-card);
+    padding: 10px;
+  }
+  .snippet-svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .snippet-svg .country{
+    fill: var(--land);
+    stroke: #e9f2f5;
+    stroke-width: 0.5;
+    cursor: default;
+  }
+  .snippet-svg .country.snippet-target{
+    fill: var(--moss);
+  }
+  .snippet-card{
+    width: min(320px, 78vw);
+    height: 220px;
+  }
+  .snippet-front{
+    background: linear-gradient(170deg, #cfe3ef, #b9d5e6);
+    padding: 10px;
+    border: 1.5px dashed rgba(30,42,31,0.25);
+  }
+
+  footer.credit{
+    text-align:center;
+    margin-top: 30px;
+    color: rgba(244,237,224,0.3);
+    font-size:0.78rem;
+  }
+
+  @media (max-width: 480px){
+    .app{ padding: 20px 14px 40px; }
+    .game-header{ flex-direction:column; align-items:stretch; }
+    .score-box{ justify-content:space-between; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="mark">Atlas</span>
+      <span class="tag">quiz geograficzny Europy</span>
+    </div>
+    <button class="back-btn" id="backBtn">&larr; wróć</button>
+  </div>
+
+  <!-- HOME -->
+  <section class="screen active fade-in" id="screen-home">
+    <div class="home-hero">
+      <h1>Co dziś sprawdzamy?</h1>
+      <p>Wybierz państwa albo stolice Europy.</p>
+    </div>
+    <div class="choice-grid three-up">
+      <button class="choice-card countries" id="goCountries">
+        <span class="stripe"></span>
+        <span class="icon">🗺️</span>
+        <h2>Państwa</h2>
+        <p>Wskazuj kraje na mapie Europy. Do wyboru tryb z eliminacją błędnych odpowiedzi lub szybkie przechodzenie dalej.</p>
+      </button>
+      <button class="choice-card capitals" id="goCapitals">
+        <span class="stripe"></span>
+        <span class="icon">🏛️</span>
+        <h2>Stolice</h2>
+        <p>Ucz się stolic z fiszkami albo sprawdź się, wpisując odpowiedzi samodzielnie.</p>
+      </button>
+      <button class="choice-card snippet" id="goSnippet">
+        <span class="stripe"></span>
+        <span class="icon">🧩</span>
+        <h2>Wycinek</h2>
+        <p>Zobacz przybliżony fragment mapy i odgadnij, jakie to państwo. Nauka z fiszkami albo wpisywanie odpowiedzi.</p>
+      </button>
+    </div>
+  </section>
+
+  <!-- COUNTRIES MODE SELECT -->
+  <section class="screen" id="screen-countries-select">
+    <div class="mode-select">
+      <h2>Państwa &mdash; wybierz tryb</h2>
+      <p class="sub">Jak mają znikać błędne kliknięcia?</p>
+      <div class="mode-list">
+        <button class="mode-btn" id="mode-elimination">
+          <span class="num">1</span>
+          <span class="txt">
+            <h3>Eliminacja błędów</h3>
+            <p>Złe kraje zostają zaznaczone na czerwono i znikają dopiero, gdy klikniesz właściwy. Pytanie zostaje, aż trafisz.</p>
+          </span>
+        </button>
+        <button class="mode-btn" id="mode-forward">
+          <span class="num">2</span>
+          <span class="txt">
+            <h3>Szybka gra</h3>
+            <p>Po każdym kliknięciu &mdash; dobrym czy złym &mdash; od razu przechodzisz do kolejnego państwa.</p>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- COUNTRIES GAME -->
+  <section class="screen" id="screen-countries-game">
+    <div class="game-header">
+      <div class="prompt-box">
+        <div class="label">Znajdź na mapie</div>
+        <div class="value" id="country-target">&mdash;</div>
+      </div>
+      <div class="score-box">
+        <div class="pill correct">✓ <span class="n" id="c-correct">0</span></div>
+        <div class="pill wrong">✕ <span class="n" id="c-wrong">0</span></div>
+        <div class="pill">📍 <span class="n" id="c-progress">0/0</span></div>
+      </div>
+    </div>
+    <div class="map-wrap">
+      <div class="map-feedback" id="c-feedback"></div>
+      <div class="map-tooltip" id="c-tooltip"></div>
+      <div class="map-zoom-controls">
+        <button class="zoom-btn" id="zoom-in" type="button" aria-label="Przybliż">+</button>
+        <button class="zoom-btn" id="zoom-out" type="button" aria-label="Oddal">&minus;</button>
+        <button class="zoom-btn reset" id="zoom-reset" type="button" aria-label="Resetuj widok">&#8634;</button>
+      </div>
+      <svg id="europe-svg" viewBox="403 148 219.0 214.0" xmlns="http://www.w3.org/2000/svg">
+    <path id="AL" class="country" d="M532.985,334.657L532.629,335.93L533.027,337.524L534.19,338.425L534.134,339.393L533.223,339.925L533.054,341.115L531.75,342.88L531.274,342.626L531.218,341.826L529.665,340.601L529.421,338.851L529.658,336.323L530.041,335.164L529.568,334.573L529.38,333.377L530.596,331.512L530.774,332.227L531.528,331.891L532.125,332.907L532.796,333.293z"></path>
+    <path id="AT" class="country" d="M522.861,309.853L522.648,311.557L521.069,311.565L521.613,312.464L520.682,315.111L520.147,315.8L517.695,315.901L516.28,316.823L513.964,316.509L509.955,315.458L509.329,314.034L506.558,314.746L506.231,315.523L504.533,314.943L503.102,314.832L501.833,314.085L502.262,313.078L502.154,312.344L503,312.116L504.419,313.264L504.818,312.173L507.291,312.35L509.295,311.606L510.64,311.733L511.514,312.582L511.775,311.878L511.378,309.158L512.385,308.624L513.374,306.673L515.457,308.037L517.034,306.302L518.021,305.983L520.198,307.281L521.515,307.061L522.807,307.861L522.582,308.396z"></path>
+    <path id="BY" class="country" d="M541.099,284.075L543.809,284.107L546.853,282.31L547.504,279.586L549.803,278.024L549.539,275.817L551.244,274.982L554.256,273.053L557.208,274.309L557.606,275.545L559.078,274.952L561.819,276.135L562.093,278.443L561.493,279.757L563.25,282.91L564.392,283.779L564.223,284.637L566.113,285.468L566.921,286.722L565.83,287.744L563.568,287.582L563.028,288.017L563.687,289.557L564.376,292.494L561.969,292.764L561.105,293.759L560.925,296.024L559.81,295.591L557.279,295.806L556.544,294.756L555.493,295.539L554.438,294.89L552.23,294.8L549.101,293.716L546.269,293.361L544.096,293.462L542.56,294.687L541.219,294.862L541.166,292.849L540.301,290.732L541.982,289.792L541.999,287.944L541.221,286.165z"></path>
+    <path id="BE" class="country" d="M484.548,295.906L486.601,296.258L489.199,295.327L490.974,297.283L492.515,298.319L492.197,301.287L491.466,301.452L491.162,303.882L488.709,301.909L487.271,302.247L485.313,300.19L484.01,298.422L482.707,298.35L482.301,296.788z"></path>
+    <path id="BA" class="country" d="M528.542,323.106L529.558,323.096L528.856,324.823L530.208,326.323L529.799,328.144L529.139,328.314L528.615,328.666L527.703,329.559L527.292,331.658L524.811,330.215L523.752,328.613L522.684,327.76L521.395,326.313L520.787,325.104L519.414,323.27L520,321.629L521.007,322.539L521.614,321.717L522.924,321.629L525.335,322.287L527.273,322.232z"></path>
+    <path id="BG" class="country" d="M538.78,325.558L539.587,327.156L540.673,326.872L542.828,327.476L546.945,327.68L548.336,326.692L551.637,325.788L553.677,327.2L555.326,327.606L553.871,329.202L552.847,331.931L553.751,334.086L551.337,333.581L548.481,334.764L548.451,336.623L545.902,336.974L543.927,335.673L541.682,336.697L539.608,336.589L539.409,334.116L538.005,332.907L538.466,332.373L538.162,331.922L538.633,330.712L539.702,329.517L538.34,327.856L538.088,326.441z"></path>
+    <path id="HR" class="country" d="M528.049,318.934L528.73,320.484L529.621,321.618L528.542,323.106L527.273,322.232L525.335,322.287L522.924,321.629L521.614,321.717L521.007,322.539L520,321.629L519.414,323.27L520.787,325.104L521.395,326.313L522.684,327.76L523.752,328.613L524.811,330.215L527.292,331.658L526.984,332.303L524.348,330.896L522.722,329.521L520.158,328.379L517.8,325.526L518.366,325.234L517.087,323.586L517.035,322.254L515.232,321.629L514.373,323.335L513.545,322.013L513.608,320.633L513.708,320.569L515.662,320.705L516.175,320.031L517.129,320.683L518.229,320.76L518.219,319.644L519.193,319.234L519.466,317.607L521.698,316.531L522.589,317.031L524.685,318.762L527.001,319.533z"></path>
+    <path id="CY" class="country" d="M570.306,358.286L572.2,356.827L569.651,357.851L567.631,357.804L567.226,358.629L567.028,358.647L565.696,358.773L566.351,360.14L567.724,360.58L570.598,359.2L570.51,358.926z"></path>
+    <path id="CZ" class="country" d="M522.807,307.861L521.515,307.061L520.198,307.281L518.021,305.983L517.034,306.302L515.457,308.037L513.374,306.673L511.791,304.837L510.36,303.804L510.063,301.979L509.572,300.683L511.61,299.729L512.651,298.631L514.665,297.773L515.368,296.927L516.107,297.438L517.358,296.974L518.688,298.403L520.784,298.788L520.609,299.999L522.132,300.904L522.55,299.773L524.474,300.264L524.739,301.631L526.824,301.895L528.114,304.025L527.278,304.03L526.844,304.804L526.2,304.99L526.017,305.963L525.48,306.165L525.404,306.561L524.447,307L523.205,306.929z"></path>
+    <path id="DK" class="country" d="M510.834,275.843l-1.683,3.971l-2.934,-2.761l-0.391,-2.054l4.113,-1.656L510.834,275.843zM505.849,271.592l-0.685,1.901l-0.835,-0.545l-2.019,3.587l0.762,2.389l-1.794,0.741l-2.119,-0.642l-1.138,-2.723l-0.085,-5.12l0.467,-1.375l0.804,-1.54l2.47,-0.32l0.984,-1.429l2.256,-1.473l-0.095,2.676l-0.83,1.676l0.336,1.429L505.849,271.592z"></path>
+    <path id="EE" class="country" d="M543.423,264.71L543.748,261.586L542.717,262.258L540.938,260.358L540.694,257.245L544.24,255.717L547.772,254.915L550.814,255.827L553.708,255.664L554.13,256.624L552.135,259.756L552.966,264.718L551.765,266.377L549.453,266.368L547.04,264.426L545.811,263.78z"></path>
+    <path id="FI" class="country" d="M555.42,193.099L555.011,198.503L559.305,203.493L556.718,208.971L559.979,216.928L558.091,222.691L560.615,227.546L559.469,231.691L563.62,235.947L562.565,239.052L559.96,242.504L553.957,249.91L548.869,250.361L543.938,252.429L539.376,253.608L537.753,250.543L535.038,248.674L535.662,242.946L534.3,237.538L535.637,233.959L538.179,230.017L544.594,222.997L546.465,221.611L546.174,218.774L542.274,215.549L541.328,212.849L541.254,201.729L536.877,196.576L533.14,192.774L534.821,190.686L537.937,194.839L541.598,194.455L544.608,196.324L547.282,192.885L548.657,187.03L553.01,184.255L556.608,187.507z"></path>
+    <path id="FR" class="country" d="M502.058,333.54l-0.926,2.893l-1.273,-0.759l-0.649,-2.526l0.566,-1.407l1.806,-1.455L502.058,333.54zM485.313,300.19l1.957,2.057l1.439,-0.338l2.453,1.973l0.627,0.374l0.809,-0.091l1.323,1.123l4.04,0.787l-1.417,2.899l-0.356,2.975l-0.77,0.707l-1.278,-0.381l0.09,1.05l-2.051,2.303l-0.041,1.838l1.339,-0.634l0.963,1.771l-0.116,1.134l0.825,1.498l-0.972,1.208l0.723,3.039l1.52,0.494l-0.321,1.684l-2.54,2.173l-5.53,-1.039l-4.083,1.244l-0.321,2.292l-3.25,0.49l-3.155,-1.716l-1.02,0.821l-5.161,-1.73l-1.118,-1.491l1.45,-2.319l0.534,-7.877l-2.894,-4.264l-2.068,-2.086l-4.285,-1.599l-0.283,-3.066l3.636,-0.923l4.708,1.091l-0.889,-4.845l2.647,1.849l6.528,-3.374l0.842,-3.605l2.452,-0.898l0.406,1.562l1.303,0.073L485.313,300.19z"></path>
+    <path id="DE" class="country" d="M503.072,278.923L503.122,280.798L505.956,281.92L505.926,283.617L508.776,282.721L510.353,281.407L513.519,283.299L514.842,284.812L515.498,287.205L514.716,288.449L515.734,290.098L516.428,292.547L516.209,294.11L517.358,296.974L516.107,297.438L515.368,296.927L514.665,297.773L512.651,298.631L511.61,299.729L509.572,300.683L510.063,301.979L510.36,303.804L511.791,304.837L513.374,306.673L512.385,308.624L511.378,309.158L511.775,311.878L511.514,312.582L510.64,311.733L509.295,311.606L507.291,312.35L504.818,312.173L504.419,313.264L503,312.116L502.154,312.344L499.149,311.075L498.573,311.978L496.188,311.949L496.544,308.974L497.962,306.074L493.922,305.288L492.599,304.165L492.757,302.27L492.197,301.287L492.515,298.319L492.044,293.629L493.729,293.627L494.439,291.916L495.138,287.691L494.614,286.108L495.162,285.11L497.505,284.853L498.025,285.893L499.929,283.56L499.288,281.767L499.159,279.022L501.278,279.664z"></path>
+    <path id="GR" class="country" d="M541.704,356.712l1.533,1.156l2.182,-0.195l2.086,0.243l-0.067,0.595l1.528,-0.41l-0.351,1.007l-4.038,0.29l0.028,-0.563l-3.421,-0.666L541.704,356.712zM549.847,335.754l-0.868,2.325l-0.666,0.414l-1.708,-0.104l-1.463,-0.35l-3.396,0.959l1.944,2.062l-1.424,0.594l-1.562,0.004l-1.483,-1.884l-0.526,0.804l0.626,2.176l1.403,1.697l-1.057,0.788l1.562,1.65l1.388,1.033l0.042,2l-1.358,-1.146l-1.236,0.209l0.827,1.799l-0.917,0.19l-1,-0.694l1.2,3.952l-0.583,0.014l-0.446,-1.263l-0.573,-0.025l-0.26,1.318l-0.454,-0.299l0.102,-0.739l-0.561,-1.045h-0.637l0.118,0.843l-0.25,0.267l-0.616,-0.54l-0.383,-1.021l0.519,-0.569l-0.357,-0.74l-0.408,-0.382l-0.423,-0.094l-0.491,-0.943l0.583,-0.519l0.357,-0.484l0.561,0.102l0.251,-0.41l0.59,-0.163l0.683,0.461l0.553,0.169l0.386,-0.622l-0.938,-0.084l-0.555,-0.194l-1.25,0.28l-1.219,0.048l-1.093,-1.641l-0.181,-0.254l0.167,-0.642l-1.423,-1.155l-0.19,-1.03l1.304,-1.765l0.168,-1.19l0.911,-0.533l0.056,-0.968l1.834,-0.327l1.069,-0.81l1.52,0.072l0.461,-0.647l0.534,-0.124l2.074,0.107l2.245,-1.024l1.976,1.301l2.548,-0.351l0.031,-1.859L549.847,335.754z"></path>
+    <path id="HU" class="country" d="M520.682,315.111L521.613,312.464L521.069,311.565L522.648,311.557L522.861,309.853L524.288,310.922L525.322,311.376L527.675,310.866L527.901,310.027L529.015,309.903L530.38,309.252L530.684,309.521L532,308.997L532.658,308.005L533.577,307.747L536.58,309.028L537.178,308.598L538.734,309.741L538.93,310.861L537.217,311.733L535.891,314.531L534.195,317.292L531.947,318.054L530.197,317.875L528.049,318.934L527.001,319.533L524.685,318.762L522.589,317.031L521.698,316.531L521.153,315.156z"></path>
+    <path id="IS" class="country" d="M434.573,212.429L433.925,216.909L437.093,221.51L433.448,226.516L425.36,230.897L422.943,232.045L419.252,231.119L411.429,229.111L414.189,226.27L408.086,223.071L413.051,221.788L412.931,219.825L407.046,218.254L408.94,213.78L413.19,212.748L417.56,217.432L421.82,213.682L425.348,215.639L429.921,211.932z"></path>
+    <path id="IE" class="country" d="M457.875,284.288L458.337,287.648L456.218,291.771L451.248,294.453L447.279,293.77L449.552,288.99L448.088,284.223L451.902,280.47L454.021,278.198L454.6,280.802L454.021,283.373L455.756,283.308z"></path>
+    <path id="IT" class="country" d="M518.77,347.883l-1.01,2.783l0.419,1.087l-0.588,1.795l-2.145,-1.313l-1.426,-0.377l-3.914,-1.786l0.393,-1.816l3.281,0.324l2.86,-0.387L518.77,347.883zM501.077,337.065l1.682,2.622l-0.394,4.811l-1.275,-0.228l-1.144,1.201l-1.062,-0.954l-0.112,-4.384l-0.64,-2.105l1.542,0.185L501.077,337.065zM509.955,315.458l4.01,1.051l-0.304,1.991l0.671,1.707l-2.232,-0.583l-2.28,1.417l0.155,1.966l-0.343,1.121l0.919,1.989l2.629,1.951l1.41,3.167l3.12,3.047l2.197,-0.023l0.683,0.829l-0.787,0.745l2.511,1.345l2.059,1.12l2.404,1.919l0.291,0.683l-0.524,1.306l-1.556,-1.704l-2.436,-0.603l-1.18,2.362l2.026,1.344l-0.333,1.879l-1.171,0.213l-1.498,3.057l-1.168,0.272l0.011,-1.084l0.572,-1.913l0.609,-0.766l-1.095,-2.09l-0.855,-1.833l-1.164,-0.455l-0.828,-1.583l-1.802,-0.67l-1.213,-1.487l-2.075,-0.241l-2.191,-1.683l-2.565,-2.448l-1.906,-2.188l-0.875,-3.803l-1.395,-0.452l-2.281,-1.287l-1.291,0.528l-1.62,1.802l-1.165,0.284l0.321,-1.684l-1.52,-0.494l-0.723,-3.039l0.972,-1.208l-0.825,-1.498l0.116,-1.134l1.207,0.86l1.352,-0.19l1.572,-1.364l0.486,0.639l1.335,-0.128l0.607,-1.63l2.075,0.508l1.235,-0.684l0.222,-1.67l1.699,0.581l0.326,-0.777l2.771,-0.712L509.955,315.458z"></path>
+    <path id="XK" class="country" d="M533.467,333.918L533.341,334.688L532.985,334.657L532.796,333.293L532.125,332.907L531.528,331.891L532.052,331.039L532.723,330.765L533.111,329.495L533.614,329.283L534.012,329.824L534.536,330.062L534.903,330.669L535.364,330.849L535.909,331.554L536.307,331.533L535.993,332.457L535.657,332.907L535.75,333.19L535.123,333.335z"></path>
+    <path id="LV" class="country" d="M534.291,273.746L534.387,269.938L535.765,266.703L538.408,264.92L540.634,268.799L542.884,268.699L543.423,264.71L545.811,263.78L547.04,264.426L549.453,266.368L551.765,266.377L553.116,267.572L553.355,270.063L554.256,273.053L551.244,274.982L549.539,275.817L546.844,273.398L545.352,273.076L544.958,272.028L542.204,272.527L537.502,272.203z"></path>
+    <path id="LT" class="country" d="M538.988,282.094L538.763,280.866L539.063,279.539L537.823,278.766L534.887,277.91L534.291,273.746L537.502,272.203L542.204,272.527L544.958,272.028L545.352,273.076L546.844,273.398L549.539,275.817L549.803,278.024L547.504,279.586L546.853,282.31L543.809,284.107L541.099,284.075L540.426,282.606z"></path>
+    <path id="LU" class="country" d="M492.197,301.287L492.757,302.27L492.599,304.165L491.79,304.255L491.162,303.882L491.466,301.452z"></path>
+    <path id="MD" class="country" d="M549.89,309.445L550.559,308.826L552.422,308.409L554.489,309.718L555.642,309.875L556.909,310.999L556.708,312.406L557.729,313.082L558.134,314.799L559.113,315.837L558.915,316.444L559.438,316.855L558.695,317.155L557.043,317.036L556.767,316.475L556.181,316.799L556.379,317.523L555.611,318.809L555.122,320.184L554.416,320.617L553.914,318.791L554.209,317.067L554.12,315.282L552.502,312.84L551.613,311.092L550.744,309.854z"></path>
+    <path id="ME" class="country" d="M530.774,332.227L530.596,331.512L529.38,333.377L529.568,334.573L528.981,334.283L528.196,333.053L526.984,332.302L527.292,331.658L527.703,329.559L528.615,328.666L529.139,328.314L529.883,328.975L530.292,329.506L531.214,329.919L532.283,330.712L532.052,331.039L531.528,331.891z"></path>
+    <path id="NL" class="country" d="M489.078,287.613L488.907,288.521L489.391,288.679L489.603,289.087L489.688,289.458L490.078,289.597L490.108,289.794L489.76,290.059L489.375,290.083L489.375,290.375L489.642,290.84L489.257,291.292L489.646,291.417L490.438,290.646L490.917,289.938L490.917,289.458L490.75,289.125L490.292,288.896L490.397,288.375L490.292,287.917L490.708,286.917L491.12,286.396L492.284,285.975L494.614,286.108L495.138,287.691L494.439,291.916L493.729,293.627L492.044,293.629L492.515,298.319L490.974,297.283L489.199,295.327L486.601,296.258L484.548,295.906L485.25,294.667L486.167,293.458L487.446,292.209L488.203,290.117L488.448,287.935z"></path>
+    <path id="MK" class="country" d="M532.985,334.657L533.341,334.688L533.467,333.918L535.123,333.335L535.75,333.19L536.705,332.97L538.005,332.907L539.409,334.116L539.608,336.589L539.074,336.713L538.612,337.36L537.093,337.288L536.024,338.098L534.19,338.425L533.027,337.524L532.628,335.93z"></path>
+    <path id="NO" class="country" d="M554.225,175.606l8.77,6.24l-3.611,2.226l3.072,5.115l-4.771,3.188l-2.265,0.724l1.188,-5.592l-3.598,-3.252l-4.354,2.775l-1.375,5.854l-2.673,3.439l-3.011,-1.87l-3.661,0.384l-3.116,-4.153l-1.681,2.088l-1.739,0.323l-0.412,5.083l-5.284,-1.224l-0.742,4.217l-2.692,-0.025l-1.851,5.243l-2.805,7.867l-4.354,9.5l1.021,2.232l-0.976,2.554l-2.781,-0.109l-1.821,5.906l0.172,8.044l1.792,2.978l-0.928,6.727l-2.333,3.812l-1.236,3.145l-1.881,-3.351l-5.536,6.266l-3.738,1.245l-3.877,-2.715l-1.002,-5.864l-0.887,-13.256l2.582,-3.875l7.403,-5.184l5.536,-6.586l5.133,-9.301l6.737,-13.762l4.696,-5.674l7.705,-9.893l6.153,-3.592l4.613,0.44l4.27,-6.995l5.113,0.381L554.225,175.606z"></path>
+    <path id="PL" class="country" d="M517.358,296.974L516.209,294.11L516.428,292.547L515.734,290.098L514.716,288.449L515.498,287.205L514.842,284.812L516.758,283.417L521.134,281.201L524.665,279.563L527.463,280.383L527.674,281.56L530.378,281.62L533.832,282.166L538.988,282.094L540.426,282.606L541.099,284.075L541.221,286.165L541.999,287.944L541.982,289.792L540.301,290.732L541.166,292.849L541.219,294.862L542.629,298.753L542.329,299.988L540.938,300.499L538.392,304.108L539.115,306.033L538.502,305.785L535.838,304.137L533.82,304.745L532.496,304.304L530.839,305.223L529.425,303.7L528.272,304.285L528.114,304.025L526.824,301.895L524.739,301.631L524.474,300.264L522.55,299.773L522.132,300.904L520.609,299.999L520.784,298.788L518.688,298.403z"></path>
+    <path id="PT" class="country" d="M449.921,334.562L450.938,333.607L452.083,333.057L452.785,334.898L454.441,334.894L454.921,334.42L456.555,334.552L457.339,336.426L456.043,337.432L456.007,340.307L455.552,340.843L455.439,342.564L454.228,342.863L455.351,345.028L454.577,347.378L455.544,348.435L455.159,349.398L454.12,350.72L454.354,351.881L453.227,352.788L451.749,352.297L450.302,352.682L450.73,349.937L450.467,347.759L449.212,347.431L448.542,346.078L448.765,343.723L449.883,342.408L450.082,340.935L450.667,338.728L450.604,337.16L450.044,335.824z"></path>
+    <path id="RO" class="country" d="M538.93,310.861L540.141,309.966L541.875,310.43L543.673,310.445L544.975,311.463L545.932,310.824L548.001,310.423L548.707,309.444L549.89,309.445L550.744,309.854L551.613,311.092L552.502,312.84L554.12,315.282L554.209,317.067L553.914,318.791L554.416,320.617L555.667,321.35L556.984,320.71L558.256,321.393L558.321,322.415L556.962,323.264L556.11,322.895L555.326,327.606L553.677,327.2L551.637,325.788L548.336,326.692L546.945,327.68L542.828,327.476L540.673,326.872L539.587,327.156L538.78,325.558L538.267,324.877L538.917,324.216L538.225,323.728L537.345,324.606L535.71,323.466L535.49,321.838L533.781,320.903L533.467,319.633L531.947,318.054L534.195,317.292L535.891,314.531L537.217,311.733z"></path>
+    <path id="RU" class="country" d="M1008.267,215.754l-2.78,2.973l-4.596,0.698l-0.069,6.463l-1.123,1.347l-2.625,-0.193l-2.138,-2.264l-3.728,-1.917l-0.627,-2.89l-2.848,-1.102l-3.188,0.875l-1.523,-2.369l0.609,-2.552l-3.358,1.635l1.265,3.194l-1.591,2.833l-0.021,0.036l-3.604,2.885l-3.634,-0.478l2.529,3.442l1.669,5.201l1.295,1.668l0.325,2.532l-0.724,1.602l-5.226,-1.317l-7.837,4.511l-2.493,0.688l-4.29,4.096l-4.07,3.505l-1.03,2.553l-4.011,-3.9l-7.306,4.419l-1.275,-2.078l-2.701,2.394l-3.75,-0.763l-0.903,3.631l-3.364,5.218l0.101,2.137l3.193,1.174l-0.376,7.458l-2.603,0.186l-1.201,4.154l1.167,2.104l-4.903,2.467l-0.973,5.405l-4.181,1.135l-0.84,4.663l-4.042,4.183l-1.036,-3.085l-1.201,-6.693l-1.564,-10.647l1.348,-6.954l2.365,-3.071l0.146,-2.441l4.357,-1.18l5.009,-6.781l4.826,-5.727l5.04,-4.57l2.254,-8.366l-3.406,0.511l-1.685,4.922l-7.111,6.361l-2.297,-7.138l-7.238,1.999l-7.018,9.56l2.315,3.377l-6.258,1.419l-4.335,0.557l0.203,-3.946l-4.358,-0.839l-3.474,2.702l-8.573,-0.941l-9.223,1.62l-9.083,10.33l-10.745,11.777l4.417,0.61l1.379,3.001l2.724,1.055l1.794,-2.378l3.076,0.311l4.048,5.191l0.095,3.924l-2.191,4.512l-0.237,5.266l-1.265,6.848l-4.226,6.013l-0.939,2.817l-3.806,4.662l-3.777,4.528l-1.811,2.283l-3.736,2.245l-1.769,0.049l-1.761,-1.858l-3.764,2.792l-0.438,1.258l-0.393,-0.661l-0.017,-1.929l1.432,-0.103l0.404,-4.553l-0.739,-3.358l2.407,-1.399l3.402,0.703l1.886,-3.888l0.961,-4.462l1.089,-1.511l1.474,-3.761l-4.634,1.239l-2.431,1.647l-4.261,-0.005l-1.135,-3.945l-3.321,-3.035l-4.88,-1.379l-1.037,-4.284l-0.977,-2.731l-1.051,-1.937l-1.733,-4.611l-2.462,-1.711l-4.196,-1.394l-3.718,0.127l-3.484,0.845l-2.315,2.313l1.538,1.095l0.035,2.522l-1.56,1.45l-2.531,4.725l0.026,1.929l-3.952,2.739l-3.365,-1.632l-3.346,0.361l-1.468,-1.457l-1.682,-0.472l-4.106,3.059l-3.691,0.712l-2.577,1.062l-3.532,-0.697l-2.6,0.045l-1.702,-2.203l-2.746,-2.092l-2.81,-0.577l-3.547,0.573l-2.65,0.809l-3.983,-1.841l-0.534,-3.322l-3.297,-1.151l-2.545,-0.527l-3.141,-1.871l-2.904,4.659l1.139,2.6l-2.726,3.034l-4.054,-1.09l-2.799,-0.156l-1.874,-2.042l-2.925,-0.065l-2.438,-1.354l-4.265,2.071l-5.35,3.739l-2.956,0.744l-1.098,0.352l-1.487,-2.634l-3.612,0.579l-1.193,-1.843l-1.96,-0.848l-1.35,-2.545l-1.548,-0.799l-4.029,1.14l-3.862,-2.565l-1.494,2.333l-6.266,-11.576l-3.577,-3.659l1.025,-1.504l-7.026,4.494l-2.689,0.268l0.232,-2.583l-3.602,-1.631l-2.927,1.166l-0.883,-5.012l-5.039,-1.059l-2.521,2.033l-7.016,1.791l-1.369,1.189l-10.492,1.663l-1.285,1.618l2.024,3.208l-2.692,1.204l0.525,1.254l-2.691,2.223l4.544,3.098l-0.702,2.106l-3.938,-0.191l-0.814,1.31l-3.586,-2.293l-4.445,0.089l-2.976,1.868l-3.319,-1.791l-6.181,-3.102l-4.38,0.117l-5.788,4.849l-0.349,3.193l-2.883,-2.532l-2.237,4.77l0.819,0.874l-1.618,3.215l2.38,2.837l2.081,-0.116l1.787,2.76l-0.284,2.102l1.424,0.656l-1.278,2.391l-2.718,0.66l-2.787,4.088l2.548,3.695l-0.276,2.586l3.062,4.456l-1.674,1.506l-0.481,0.945l-1.241,-0.253l-1.927,-2.266l-0.788,-0.126l-1.763,-0.871l-0.858,-1.55l-2.615,-0.794l-1.7,0.597l-0.491,-0.706l-3.818,-1.831l-4.128,-0.622l-2.37,-0.658l-0.342,0.455l-3.575,-3.274l-3.199,-1.477l-2.422,-2.319l2.041,-0.636l2.327,-3.354l-1.568,-1.605l4.132,-1.667l-0.074,-0.899l-2.517,0.663l0.088,-1.832l1.445,-1.159l2.713,-0.306l0.441,-1.395l-0.62,-2.327l1.139,-2.233l-0.033,-1.263l-4.133,-1.409l-1.639,0.047l-1.73,-2.043l-2.151,0.693l-3.561,-1.542l0.061,-0.868l-0.997,-1.926l-2.236,-0.216l-0.232,-1.392l0.7,-0.913l-1.792,-2.575l-2.907,0.442l-0.852,-0.229l-0.708,1.037l-1.047,-0.184l-0.689,-2.937l-0.658,-1.54l0.54,-0.435l2.262,0.162l1.091,-1.022l-0.808,-1.253l-1.891,-0.832l0.169,-0.857l-1.141,-0.87l-1.758,-3.153l0.601,-1.314l-0.274,-2.308l-2.741,-1.183l-1.471,0.593l-0.398,-1.236l-2.952,-1.256l-0.901,-2.989l-0.239,-2.492l-1.351,-1.194l1.201,-1.659l-0.832,-4.962l1.995,-3.133l-0.422,-0.959l3.187,-3.071l-2.938,-2.684l6.003,-7.405l2.604,-3.453l1.055,-3.104l-4.15,-4.256l1.146,-4.145l-2.524,-4.854l1.888,-5.764l-3.261,-7.957l2.587,-5.478l-4.294,-4.99l0.409,-5.404l2.265,-0.724l4.771,-3.188l2.893,-2.813l4.606,4.86l7.678,1.876l10.594,8.646l2.152,3.508l0.185,4.796l-3.113,3.695l-4.578,1.846l-12.517,-5.313l-2.059,0.9l4.571,5.097l0.179,3.154l0.183,6.753l3.61,1.966l2.191,1.657l0.362,-3.107l-1.689,-2.801l1.785,-2.505l6.778,4.099l2.361,-1.593l-1.887,-4.877l6.535,-6.742l2.588,0.404l2.618,2.43l1.633,-4.811l-2.338,-4.283l1.373,-4.406l-2.061,-4.692l7.843,2.442l1.602,4.183l-3.55,0.908l0.019,4.038l2.207,2.438l4.332,-1.541l0.686,-4.611l5.857,-3.525l9.785,-6.543l2.114,0.382l-2.764,4.64l3.478,0.785l2.009,-2.584l5.255,-0.211l4.164,-3.193l3.195,4.621l3.186,-5.087l-2.938,-4.577l1.458,-2.663l8.282,2.443l3.881,2.488l10.161,8.799l1.875,-3.975l-2.85,-4.111l-0.082,-1.677l-3.379,-0.782l0.925,-3.827l-1.5,-6.491l-0.085,-2.737l5.175,-7.99l1.84,-8.419l2.085,-1.878l7.423,2.514l0.585,5.183l-2.658,7.283l1.744,2.779l0.902,5.938l-0.637,11.073l3.093,4.73l-1.203,5.008l-5.492,10.198l3.205,1.024l1.115,-2.514l3.085,-1.815l0.744,-3.553l2.427,-3.489l-1.634,-4.26l1.309,-5.083l-3.066,-0.644l-0.674,-4.418l2.237,-8.278l-3.642,-7.033l5.018,-6.042l-0.648,-6.619l1.398,-0.216l1.473,5.189l-1.105,8.667l3,1.592l-1.278,-6.373l4.692,-3.579l5.819,-0.488l5.181,5.18l-2.493,-7.622l-0.279,-10.282l4.876,-2.021l6.744,0.444l6.075,-1.321l-2.278,-5.381l3.245,-7.016l3.221,-0.3l5.452,-5.513l7.403,-1.514l0.936,-3.153l7.362,-1.082l2.294,2.606l6.293,-6.237l5.151,0.199l0.772,-5.238l2.68,-5.334l6.619,-5.312l4.809,4.208l-3.818,3.131l6.352,1.917l0.757,6.034l2.562,-2.943l8.197,0.163l6.32,5.843l2.251,4.351l-0.698,5.854l-3.102,3.242l-7.368,5.917l-2.106,3.079l3.477,1.433l4.148,2.552l2.523,-1.91l1.431,6.393l1.231,-2.559l4.483,-1.575l8.996,1.646l0.684,4.576l11.722,1.43l0.16,-7.473l5.95,1.742l4.477,-0.054l4.527,5.138l1.291,6.038l-1.659,3.836l3.521,6.982l4.41,3.493l2.705,-9.178l4.498,3.996l4.778,-2.376l5.427,2.716l2.065,-2.475l4.587,1.242l-2.024,-8.398l3.702,-4.067l25.323,6.061l2.387,5.355l7.34,6.653l11.322,-1.623l5.582,1.414l2.334,3.498l-0.341,6.016l3.454,2.286l3.753,-1.641l4.973,-0.211l5.293,1.575l5.314,-0.887l4.884,6.994l3.475,-2.483l-2.268,-5.074l1.249,-3.618l8.945,2.286l5.832,-0.486l8.064,3.843l3.925,3.44l6.869,5.858l7.352,7.341l-0.241,4.437l1.891,1.745l-0.65,-5.146l7.611,1.068L1008.267,215.754zM880.842,306.251l-2.821,-7.684l-1.157,-4.509l0.072,-4.496l-0.971,-4.503l-0.729,-3.15l-1.248,0.673l1.113,2.205l-2.592,2.166l-0.248,6.296l1.643,4.411l-0.123,5.852l-0.649,3.237l0.32,4.537l-0.313,4.015l0.52,3.4l1.838,-3.134l2.125,2.445l0.078,-2.836l-2.732,-4.229l1.725,-6.107L880.842,306.251zM537.823,278.766l-2.936,-0.856l-3.869,1.583l-0.639,2.127l3.453,0.545l5.156,-0.072l-0.225,-1.228l0.299,-1.327L537.823,278.766zM979.946,178.648l3.662,-0.52l2.889,-2.065l0.24,-1.188l-4.056,-2.515l-2.376,-0.019l-0.359,0.371l-3.574,3.645l0.5,2.726L979.946,178.648zM870.068,151.559l-2.66,3.915l0.491,0.518l5.746,1.084l4.251,-0.068l-0.339,-2.569l-3.983,-3.81L870.068,151.559zM894.642,142.031l3.241,-4.248l-7.036,-2.875l-5.227,-1.681l-0.671,3.585l5.211,4.267L894.642,142.031zM869.514,140.337l10.335,0.296l2.205,-8.145l-10.135,-6.071l-7.404,-0.512l-3.699,2.18l-1.507,7.752l5.555,7.013L869.514,140.337zM622.395,166.284l-2.867,1.958l0.41,4.832l5.075,2.348l0.744,3.818l9.161,1.102l1.656,-0.743l-5.363,-7.106l-0.57,-7.516l4.395,-9.143l4.179,-9.819l8.71,-10.168l8.563,-5.338l9.935,-5.74l1.884,-3.706l-1.949,-4.827l-5.457,1.604l-4.802,4.492l-9.332,2.222l-9.257,7.409l-6.271,5.849l0.759,4.87l-6.713,9.029l2.578,1.22l-5.562,8.271L622.395,166.284zM769.869,98.338l0.833,-5.72l-7.107,-8.343l-2.106,-0.985l-2.304,1.696l-5.122,18.604L769.869,98.338zM605.64,69.025l3.037,3.876l3.277,-2.693l0.391,-2.719l2.521,-1.272l3.764,-2.235l1.085,-2.624l-4.159,-3.847l-2.643,2.903l-1.61,4.125l-0.573,-4.649l-4.26,0.211l-5.474,3.152l6.24,0.521L605.64,69.025zM736.889,82.071l4.653,5.73l7.81,4.202l6.118,-1.803l0.691,-13.623l-6.456,-16.04l-5.448,-9.023l-6.065,4.109l-7.28,11.834l3.825,3.27L736.889,82.071z"></path>
+    <path id="RS" class="country" d="M533.781,320.903L535.49,321.838L535.71,323.466L537.345,324.606L538.225,323.728L538.917,324.216L538.267,324.877L538.78,325.558L538.088,326.441L538.34,327.856L539.702,329.517L538.633,330.712L538.162,331.922L538.466,332.373L538.005,332.907L536.705,332.97L535.75,333.19L535.657,332.907L535.993,332.457L536.307,331.533L535.909,331.554L535.364,330.849L534.903,330.669L534.536,330.062L534.012,329.824L533.614,329.283L533.111,329.495L532.723,330.765L532.052,331.039L532.283,330.712L531.214,329.919L530.292,329.506L529.883,328.975L529.139,328.314L529.799,328.144L530.208,326.323L528.856,324.823L529.558,323.096L528.542,323.106L529.621,321.618L528.73,320.484L528.049,318.934L530.197,317.875L531.947,318.054L533.467,319.633z"></path>
+    <path id="SK" class="country" d="M528.114,304.025L528.272,304.285L529.425,303.7L530.839,305.223L532.496,304.304L533.82,304.745L535.838,304.137L538.502,305.785L537.725,306.893L537.178,308.598L536.58,309.028L533.577,307.747L532.658,308.005L532,308.997L530.684,309.521L530.38,309.252L529.015,309.903L527.901,310.027L527.675,310.866L525.322,311.376L524.288,310.922L522.861,309.853L522.582,308.396L522.807,307.861L523.205,306.929L524.447,307L525.404,306.561L525.48,306.165L526.017,305.963L526.2,304.99L526.844,304.804L527.278,304.03z"></path>
+    <path id="SI" class="country" d="M513.964,316.509L516.28,316.823L517.695,315.901L520.147,315.8L520.682,315.111L521.153,315.156L521.698,316.531L519.466,317.607L519.193,319.234L518.219,319.644L518.229,320.76L517.129,320.683L516.175,320.031L515.662,320.705L513.708,320.569L514.332,320.207L513.661,318.5z"></path>
+    <path id="ES" class="country" d="M449.921,334.562L450.062,331.875L448.917,330.223L452.883,327.448L456.314,328.145L460.079,328.121L463.063,328.778L465.39,328.576L469.922,328.704L471.04,330.194L476.201,331.925L477.22,331.104L480.375,332.819L483.625,332.329L483.775,334.519L481.118,337.005L477.525,337.789L477.275,339.031L475.552,341.064L474.472,344.02L475.565,346.074L473.943,347.666L473.337,349.968L471.22,350.67L469.234,353.36L465.676,353.413L463.003,353.347L461.247,354.573L460.176,355.879L458.804,355.593L457.766,354.424L456.971,352.423L454.354,351.881L454.12,350.72L455.159,349.398L455.544,348.435L454.577,347.378L455.351,345.028L454.228,342.863L455.439,342.564L455.552,340.843L456.007,340.307L456.043,337.432L457.339,336.426L456.555,334.552L454.921,334.42L454.441,334.894L452.785,334.898L452.083,333.057L450.938,333.607z"></path>
+    <path id="SE" class="country" d="M537.451,217.489L534.732,222.179L535.17,226.195L530.71,231.334L525.295,236.672L523.254,245.084L525.25,249.151L527.931,252.291L525.355,258.517L522.439,259.782L521.37,268.62L519.777,273.378L516.376,272.893L514.789,276.842L511.543,277.068L510.652,272.358L508.305,266.547L506.172,259.046L507.408,255.901L509.741,252.089L510.669,245.362L508.877,242.384L508.705,234.34L510.525,228.434L513.307,228.543L514.282,225.989L513.261,223.757L517.615,214.257L520.419,206.39L522.271,201.147L524.963,201.172L525.705,196.955L530.989,198.179L531.401,193.097L533.14,192.774L536.877,196.576L541.254,201.729L541.328,212.849L542.274,215.549z"></path>
+    <path id="CH" class="country" d="M502.154,312.344L502.262,313.078L501.833,314.085L503.102,314.832L504.533,314.943L504.311,316.613L503.075,317.297L501,316.789L500.393,318.419L499.058,318.547L498.572,317.908L497,319.272L495.648,319.463L494.441,318.603L493.479,316.832L492.14,317.466L492.181,315.628L494.231,313.325L494.141,312.275L495.419,312.656L496.188,311.949L498.573,311.978L499.149,311.075z"></path>
+    <path id="UA" class="country" d="M564.376,292.494L565.423,292.678L566.132,291.641L566.983,291.87L569.891,291.428L571.682,294.003L570.982,294.916L571.214,296.308L573.45,296.524L574.447,298.451L574.386,299.319L577.947,300.861L580.099,300.168L581.829,302.211L583.468,302.165L587.601,303.573L587.634,304.836L586.495,307.069L587.114,309.396L586.673,310.791L583.96,311.097L582.515,312.256L582.426,314.088L580.188,314.416L578.322,315.738L575.697,315.953L573.282,317.466L571.958,318.496L573.446,319.966L574.818,320.929L577.678,320.689L577.13,322.107L574.061,322.792L570.254,325.064L568.695,324.268L569.313,322.417L566.25,321.257L566.745,320.494L569.908,318.858L569.515,318.042L569.063,318.453L568.617,318.243L564.259,317.222L564.066,315.708L561.468,316.209L560.427,318.437L558.256,321.393L556.984,320.71L555.667,321.35L554.416,320.617L555.122,320.184L555.611,318.809L556.379,317.523L556.181,316.799L556.767,316.475L557.043,317.036L558.695,317.155L559.438,316.855L558.915,316.444L559.113,315.837L558.134,314.799L557.729,313.082L556.708,312.406L556.909,310.999L555.642,309.875L554.489,309.718L552.422,308.409L550.559,308.826L549.89,309.445L548.707,309.444L548.001,310.423L545.932,310.824L544.975,311.463L543.673,310.445L541.875,310.43L540.141,309.966L538.93,310.861L538.734,309.741L537.178,308.598L537.725,306.893L538.502,305.785L539.115,306.033L538.392,304.108L540.938,300.499L542.329,299.988L542.629,298.753L541.219,294.862L542.56,294.687L544.096,293.462L546.269,293.361L549.101,293.716L552.23,294.8L554.438,294.89L555.493,295.539L556.544,294.756L557.279,295.806L559.81,295.591L560.925,296.024L561.105,293.759L561.969,292.764z"></path>
+    <path id="GB" class="country" d="M459.378,281.001l-1.503,3.287l-2.119,-0.98l-1.734,0.065l0.578,-2.571l-0.578,-2.604l2.351,-0.202L459.378,281.001zM466.827,260.239l-2.997,5.729l2.856,-0.716l3.072,0.027l-0.731,4.218l-2.521,4.535l2.899,0.318l0.223,0.524l2.497,5.787l1.919,0.774l1.726,5.409l0.799,1.841l3.397,0.882l-0.341,2.933l-1.428,1.331l1.12,2.327l-2.522,2.328l-3.751,-0.041l-4.773,1.212l-1.308,-0.867l-1.854,2.058l-2.594,-0.497l-1.97,1.667l-1.491,-0.87l4.112,-4.636l2.51,-0.966l-0.022,-0.004l-4.379,-0.749l-0.793,-1.799l2.93,-1.413l-1.536,-2.479l0.533,-3.056l4.167,0.425l0.005,0l0.413,-2.743l-1.878,-2.952l-0.042,-0.068l-3.405,-0.852l-0.668,-1.318l1.019,-2.195l-0.922,-1.366l-1.51,2.338l-0.164,-4.797l-1.416,-2.587l1.018,-5.356l2.178,-4.311l2.239,0.425L466.827,260.239z"></path>
+    <path id="GE" class="country" d="M591.765,335.853L592.183,334.253L591.482,331.676L589.862,330.272L588.308,329.833L587.281,328.657L587.623,328.202L589.993,328.86L594.121,329.481L597.938,331.313L598.43,332.019L600.13,331.422L602.745,332.216L603.604,333.766L605.366,334.637L604.638,335.153L606.019,337.17L605.637,337.604L604.125,337.384L602.036,336.316L601.349,336.923L597.453,337.502L594.752,335.675z"></path>
+    <path id="AM" class="country" d="M597.453,337.502L601.349,336.923L601.93,337.897L602.998,338.537L602.434,339.461L603.927,340.719L603.137,341.881L604.327,342.869L605.586,343.462L605.648,345.958L604.633,346.064L603.488,343.984L603.501,343.427L602.262,343.435L601.432,342.462L600.849,342.561L599.744,341.498L597.659,340.59L597.929,338.803z"></path>
+    <path id="AZ" class="country" d="M601.432,342.462l0.831,0.973l1.239,-0.008l-0.013,0.558l1.145,2.08l-1.923,-0.477l-1.417,-1.661l-0.445,-1.366L601.432,342.462zM608.081,337.029l1.241,0.253l0.481,-0.945l1.674,-1.506l1.474,1.965l1.426,2.623l1.307,0.172l0.863,0.988l-2.31,0.294l-0.487,2.823l-0.482,1.263l-1.028,0.839l0.075,1.769l-0.698,0.178l-1.749,-1.869l0.967,-1.779l-0.829,-1.062l-1.051,0.268l-3.307,2.656l-0.062,-2.496l-1.259,-0.593l-1.19,-0.988l0.791,-1.162l-1.494,-1.258l0.564,-0.924l-1.068,-0.64l-0.581,-0.974l0.687,-0.607l2.089,1.068l1.511,0.22l0.382,-0.435l-1.381,-2.017l0.728,-0.517l0.788,0.126L608.081,337.029z"></path>
+    <path id="TR" class="country" d="M578.752,336.599l4.022,1.435l3.266,-0.571l2.414,0.33l3.311,-1.94l2.987,-0.177l2.701,1.827l0.476,1.301l-0.27,1.788l2.085,0.908l1.104,1.063l-1.92,1.032l0.875,4.112l-0.549,1.1l1.534,2.822l-1.344,0.591l-0.985,-0.892l-3.261,-0.453l-1.204,0.545l-3.189,0.544l-1.511,-0.059l-3.227,1.31l-2.307,0.011l-1.492,-0.656l-3.087,0.969l-0.917,-0.677l-0.152,1.938l-0.751,0.757l-0.751,0.755l-1.031,-1.566l1.062,-1.304l-1.71,0.296l-2.345,-0.801l-1.928,1.999l-4.255,0.389l-2.27,-1.861l-3.022,-0.117l-0.646,1.44l-1.938,0.411l-2.711,-1.847l-3.061,0.063l-1.661,-3.484l-2.048,-1.964l1.364,-2.778l-1.777,-1.723l3.11,-3.484l4.318,-0.147l1.178,-2.806l5.344,0.491l3.371,-2.416l3.267,-1.061l4.639,-0.08L578.752,336.599zM551.497,338.986l-2.34,1.976l-0.882,-1.708l0.039,-0.761l0.666,-0.414l0.868,-2.325l-1.366,-0.99l2.856,-1.183l2.414,0.505l0.333,1.441l2.447,1.204l-0.51,0.909l-3.33,0.204L551.497,338.986z"></path>
+    <g class="micro-group" data-code="AD"><circle class="micro-hit" cx="475" cy="330" r="4.16"></circle><circle id="AD" class="country micro-state" cx="475" cy="330" r="1.6"></circle></g>
+    <g class="micro-group" data-code="LI"><circle class="micro-hit" cx="500.5" cy="313.5" r="3.4"></circle><circle id="LI" class="country micro-state" cx="500.5" cy="313.5" r="1.3"></circle></g>
+    <g class="micro-group" data-code="MC"><circle class="micro-hit" cx="494" cy="322" r="3.4"></circle><circle id="MC" class="country micro-state" cx="494" cy="322" r="1.3"></circle></g>
+    <g class="micro-group" data-code="SM"><circle class="micro-hit" cx="513" cy="328" r="3.4"></circle><circle id="SM" class="country micro-state" cx="513" cy="328" r="1.3"></circle></g>
+    <g class="micro-group" data-code="VA"><circle class="micro-hit" cx="509.5" cy="333" r="3.4"></circle><circle id="VA" class="country micro-state" cx="509.5" cy="333" r="1.1"></circle></g>
+    <g class="micro-group" data-code="MT"><circle class="micro-hit" cx="514" cy="356" r="3.6399999999999997"></circle><circle id="MT" class="country micro-state" cx="514" cy="356" r="1.4"></circle></g>
+</svg>
+    </div>
+  </section>
+
+  <!-- COUNTRIES END -->
+  <section class="screen" id="screen-countries-end">
+    <div class="end-panel">
+      <h2>Koniec quizu!</h2>
+      <div class="big-num" id="c-final-score">0%</div>
+      <p id="c-final-detail">0 z 0 poprawnie za pierwszym razem</p>
+      <div class="end-actions">
+        <button class="btn btn-primary" id="c-replay">Zagraj ponownie</button>
+        <button class="btn btn-ghost" id="c-home">Menu główne</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPITALS MODE SELECT -->
+  <section class="screen" id="screen-capitals-select">
+    <div class="mode-select">
+      <h2>Stolice &mdash; wybierz tryb</h2>
+      <p class="sub">Chcesz się uczyć, czy sprawdzić wiedzę?</p>
+      <div class="mode-list">
+        <button class="mode-btn" id="mode-learn">
+          <span class="num">1</span>
+          <span class="txt">
+            <h3>Tryb nauki</h3>
+            <p>Widzisz nazwę państwa i zakrytą kartę. Kliknij, żeby odsłonić stolicę.</p>
+          </span>
+        </button>
+        <button class="mode-btn" id="mode-test">
+          <span class="num">2</span>
+          <span class="txt">
+            <h3>Tryb odpowiedzi</h3>
+            <p>Wpisujesz stolicę samodzielnie z klawiatury i sprawdzasz wynik.</p>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPITALS LEARN -->
+  <section class="screen" id="screen-capitals-learn">
+    <div class="game-header">
+      <div class="score-box" style="margin-left:auto;">
+        <div class="pill">📍 <span class="n" id="l-progress">0/0</span></div>
+      </div>
+    </div>
+    <div class="flash-stage">
+      <div class="flash-country" id="l-country">&mdash;</div>
+      <div class="flash-card" id="l-card">
+        <div class="flash-card-inner">
+          <div class="flash-face flash-front">
+            <div class="hint-icon">🎴</div>
+            <div class="hint">Kliknij, aby odsłonić stolicę</div>
+          </div>
+          <div class="flash-face flash-back">
+            <div class="label">Stolica</div>
+            <div class="cap-name" id="l-capital">&mdash;</div>
+          </div>
+        </div>
+      </div>
+      <div class="flash-nav">
+        <button class="btn btn-ghost" id="l-prev">&larr; poprzednie</button>
+        <button class="btn btn-primary" id="l-next">następne &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPITALS TEST -->
+  <section class="screen" id="screen-capitals-test">
+    <div class="game-header">
+      <div class="score-box" style="margin-left:auto;">
+        <div class="pill correct">✓ <span class="n" id="t-correct">0</span></div>
+        <div class="pill wrong">✕ <span class="n" id="t-wrong">0</span></div>
+        <div class="pill">📍 <span class="n" id="t-progress">0/0</span></div>
+      </div>
+    </div>
+    <div class="type-stage">
+      <div class="type-sub">Jaka jest stolica państwa:</div>
+      <div class="type-country" id="t-country">&mdash;</div>
+      <form class="type-form" id="t-form">
+        <input class="type-input" id="t-input" type="text" placeholder="Wpisz stolicę..." autocomplete="off">
+        <button class="type-submit" type="submit">OK</button>
+      </form>
+      <div class="type-feedback" id="t-feedback"></div>
+    </div>
+  </section>
+
+  <!-- CAPITALS TEST END -->
+  <section class="screen" id="screen-test-end">
+    <div class="end-panel">
+      <h2>Koniec quizu!</h2>
+      <div class="big-num" id="t-final-score">0%</div>
+      <p id="t-final-detail">0 z 0 poprawnych odpowiedzi</p>
+      <div class="end-actions">
+        <button class="btn btn-primary" id="t-replay">Zagraj ponownie</button>
+        <button class="btn btn-ghost" id="t-home">Menu główne</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SNIPPET MODE SELECT -->
+  <section class="screen" id="screen-snippet-select">
+    <div class="mode-select">
+      <h2>Wycinek &mdash; wybierz tryb</h2>
+      <p class="sub">Widzisz fragment mapy &mdash; jak chcesz odgadywać państwo?</p>
+      <div class="mode-list">
+        <button class="mode-btn" id="mode-snippet-learn">
+          <span class="num">1</span>
+          <span class="txt">
+            <h3>Tryb nauki</h3>
+            <p>Widzisz wycinek mapy na karcie. Kliknij, żeby odsłonić nazwę państwa.</p>
+          </span>
+        </button>
+        <button class="mode-btn" id="mode-snippet-test">
+          <span class="num">2</span>
+          <span class="txt">
+            <h3>Tryb odpowiedzi</h3>
+            <p>Wpisujesz nazwę państwa samodzielnie z klawiatury i sprawdzasz wynik.</p>
+          </span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SNIPPET LEARN (flashcards with map crop) -->
+  <section class="screen" id="screen-snippet-learn">
+    <div class="game-header">
+      <div class="score-box" style="margin-left:auto;">
+        <div class="pill">📍 <span class="n" id="sl-progress">0/0</span></div>
+      </div>
+    </div>
+    <div class="flash-stage">
+      <div class="flash-card snippet-card" id="sl-card">
+        <div class="flash-card-inner">
+          <div class="flash-face flash-front snippet-front">
+            <svg class="snippet-svg" id="sl-svg-front" viewBox="0 0 219 214" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="flash-face flash-back">
+            <div class="label">To jest</div>
+            <div class="cap-name" id="sl-country">&mdash;</div>
+          </div>
+        </div>
+      </div>
+      <div class="type-sub" style="margin-top:0;">Kliknij kartę, aby odsłonić nazwę państwa</div>
+      <div class="flash-nav">
+        <button class="btn btn-ghost" id="sl-prev">&larr; poprzednie</button>
+        <button class="btn btn-primary" id="sl-next">następne &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SNIPPET TEST (typing) -->
+  <section class="screen" id="screen-snippet-test">
+    <div class="game-header">
+      <div class="score-box" style="margin-left:auto;">
+        <div class="pill correct">✓ <span class="n" id="st-correct">0</span></div>
+        <div class="pill wrong">✕ <span class="n" id="st-wrong">0</span></div>
+        <div class="pill">📍 <span class="n" id="st-progress">0/0</span></div>
+      </div>
+    </div>
+    <div class="type-stage">
+      <div class="type-sub">Jakie to państwo?</div>
+      <div class="snippet-frame">
+        <svg class="snippet-svg" id="st-svg" viewBox="0 0 219 214" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <form class="type-form" id="st-form">
+        <input class="type-input" id="st-input" type="text" placeholder="Wpisz nazwę państwa..." autocomplete="off">
+        <button class="type-submit" type="submit">OK</button>
+      </form>
+      <div class="type-feedback" id="st-feedback"></div>
+    </div>
+  </section>
+
+  <!-- SNIPPET TEST END -->
+  <section class="screen" id="screen-snippet-end">
+    <div class="end-panel">
+      <h2>Koniec quizu!</h2>
+      <div class="big-num" id="st-final-score">0%</div>
+      <p id="st-final-detail">0 z 0 poprawnych odpowiedzi</p>
+      <div class="end-actions">
+        <button class="btn btn-primary" id="st-replay">Zagraj ponownie</button>
+        <button class="btn btn-ghost" id="st-home">Menu główne</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="credit">Mapa: granice administracyjne uproszczone, wyłącznie do celów edukacyjnych.</footer>
+</div>
+
+<script>
+// ============================================================
+// DANE: nazwy państw i stolic (Europa, ISO 3166-1 alpha-2)
+// ============================================================
+const COUNTRY_NAMES = {
+  AL: "Albania", AT: "Austria", BY: "Białoruś", BE: "Belgia",
+  BA: "Bośnia i Hercegowina", BG: "Bułgaria", HR: "Chorwacja", CY: "Cypr",
+  CZ: "Czechy", DK: "Dania", EE: "Estonia", FI: "Finlandia",
+  FR: "Francja", DE: "Niemcy", GR: "Grecja", HU: "Węgry",
+  IS: "Islandia", IE: "Irlandia", IT: "Włochy", XK: "Kosowo",
+  LV: "Łotwa", LT: "Litwa", LU: "Luksemburg", MD: "Mołdawia",
+  ME: "Czarnogóra", NL: "Holandia", MK: "Macedonia Północna", NO: "Norwegia",
+  PL: "Polska", PT: "Portugalia", RO: "Rumunia", RU: "Rosja",
+  RS: "Serbia", SK: "Słowacja", SI: "Słowenia", ES: "Hiszpania",
+  SE: "Szwecja", CH: "Szwajcaria", UA: "Ukraina", GB: "Wielka Brytania",
+  GE: "Gruzja", AM: "Armenia", AZ: "Azerbejdżan", TR: "Turcja",
+  AD: "Andora", LI: "Liechtenstein", MC: "Monako", SM: "San Marino",
+  VA: "Watykan", MT: "Malta"
+};
+
+const CAPITALS = {
+  AL: "Tirana", AT: "Wiedeń", BY: "Mińsk", BE: "Bruksela",
+  BA: "Sarajewo", BG: "Sofia", HR: "Zagrzeb", CY: "Nikozja",
+  CZ: "Praga", DK: "Kopenhaga", EE: "Tallin", FI: "Helsinki",
+  FR: "Paryż", DE: "Berlin", GR: "Ateny", HU: "Budapeszt",
+  IS: "Reykjavik", IE: "Dublin", IT: "Rzym", XK: "Prisztina",
+  LV: "Ryga", LT: "Wilno", LU: "Luksemburg", MD: "Kiszyniów",
+  ME: "Podgorica", NL: "Amsterdam", MK: "Skopje", NO: "Oslo",
+  PL: "Warszawa", PT: "Lizbona", RO: "Bukareszt", RU: "Moskwa",
+  RS: "Belgrad", SK: "Bratysława", SI: "Lublana", ES: "Madryt",
+  SE: "Sztokholm", CH: "Berno", UA: "Kijów", GB: "Londyn",
+  GE: "Tbilisi", AM: "Erywań", AZ: "Baku", TR: "Ankara",
+  AD: "Andora la Vella", LI: "Vaduz", MC: "Monako", SM: "San Marino",
+  VA: "Watykan", MT: "Valletta"
+};
+
+// Kraje, które nie mają własnego kształtu na mapie (mikropaństwa - kropki).
+// Do quizu PAŃSTW (klikanie na mapie) pomijamy je jeśli są zbyt małe do trafienia,
+// ale w tej wersji mapy mają swoje znaczniki (circle), więc biorą udział normalnie.
+const MICRO_STATES = new Set(["AD", "LI", "MC", "SM", "VA", "MT"]);
+
+const ALL_CODES = Object.keys(COUNTRY_NAMES);
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function normalizeAnswer(str) {
+  return str
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // usuń znaki diakrytyczne
+}
+
+// ============================================================
+// NAWIGACJA MIĘDZY EKRANAMI
+// ============================================================
+const screens = {
+  home: document.getElementById("screen-home"),
+  countriesSelect: document.getElementById("screen-countries-select"),
+  countriesGame: document.getElementById("screen-countries-game"),
+  countriesEnd: document.getElementById("screen-countries-end"),
+  capitalsSelect: document.getElementById("screen-capitals-select"),
+  capitalsLearn: document.getElementById("screen-capitals-learn"),
+  capitalsTest: document.getElementById("screen-capitals-test"),
+  testEnd: document.getElementById("screen-test-end"),
+  snippetSelect: document.getElementById("screen-snippet-select"),
+  snippetLearn: document.getElementById("screen-snippet-learn"),
+  snippetTest: document.getElementById("screen-snippet-test"),
+  snippetEnd: document.getElementById("screen-snippet-end"),
+};
+
+const backBtn = document.getElementById("backBtn");
+
+// historia nawigacji, żeby przycisk "wróć" wiedział dokąd wracać
+let navStack = ["home"];
+
+function showScreen(name, { pushHistory = true } = {}) {
+  Object.values(screens).forEach(s => s.classList.remove("active", "fade-in"));
+  screens[name].classList.add("active", "fade-in");
+  backBtn.classList.toggle("show", name !== "home");
+  if (pushHistory) {
+    navStack.push(name);
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+backBtn.addEventListener("click", () => {
+  // logika powrotu: z gry -> do odpowiedniego ekranu wyboru trybu; z wyboru trybu -> home
+  const current = navStack[navStack.length - 1];
+  navStack.pop();
+  let target = "home";
+  if (current === "countriesSelect") target = "home";
+  else if (current === "countriesGame" || current === "countriesEnd") target = "countriesSelect";
+  else if (current === "capitalsSelect") target = "home";
+  else if (current === "capitalsLearn" || current === "capitalsTest" || current === "testEnd") target = "capitalsSelect";
+  else if (current === "snippetSelect") target = "home";
+  else if (current === "snippetLearn" || current === "snippetTest" || current === "snippetEnd") target = "snippetSelect";
+  navStack = [target === "home" ? "home" : navStack[0]];
+  if (target === "home") navStack = ["home"];
+  else navStack = ["home", target];
+  showScreen(target, { pushHistory: false });
+});
+
+document.getElementById("goCountries").addEventListener("click", () => showScreen("countriesSelect"));
+document.getElementById("goCapitals").addEventListener("click", () => showScreen("capitalsSelect"));
+document.getElementById("goSnippet").addEventListener("click", () => showScreen("snippetSelect"));
+
+// ============================================================
+// QUIZ PAŃSTW — logika wspólna
+// ============================================================
+const svgEl = document.getElementById("europe-svg");
+const countryPaths = {}; // code -> visible element (path or micro-state circle)
+const clickTargets = {}; // code -> element that receives the click listener (group for micro-states)
+ALL_CODES.forEach(code => {
+  const el = svgEl.querySelector(`#${CSS.escape(code)}`);
+  if (el) {
+    countryPaths[code] = el;
+    const group = el.closest(".micro-group");
+    clickTargets[code] = group || el;
+  }
+});
+
+const targetEl = document.getElementById("country-target");
+const progressEl = document.getElementById("c-progress");
+const correctEl = document.getElementById("c-correct");
+const wrongEl = document.getElementById("c-wrong");
+const feedbackEl = document.getElementById("c-feedback");
+const tooltipEl = document.getElementById("c-tooltip");
+const mapWrap = document.querySelector(".map-wrap");
+
+// ============================================================
+// PRZYBLIŻANIE / PRZESUWANIE MAPY (quiz państw)
+// ============================================================
+const BASE_VIEWBOX = { x: 403, y: 148, w: 219.0, h: 214.0 };
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 6;
+let mapView = { ...BASE_VIEWBOX };
+let currentZoom = 1;
+
+function applyMapView() {
+  svgEl.setAttribute("viewBox", `${mapView.x} ${mapView.y} ${mapView.w} ${mapView.h}`);
+  svgEl.classList.toggle("zoomed", currentZoom > 1.001);
+}
+
+function clampMapView() {
+  // nie pozwól wyjechać poza granice bazowego obszaru mapy
+  mapView.w = Math.min(BASE_VIEWBOX.w, Math.max(BASE_VIEWBOX.w / MAX_ZOOM, mapView.w));
+  mapView.h = Math.min(BASE_VIEWBOX.h, Math.max(BASE_VIEWBOX.h / MAX_ZOOM, mapView.h));
+  const maxX = BASE_VIEWBOX.x + BASE_VIEWBOX.w - mapView.w;
+  const maxY = BASE_VIEWBOX.y + BASE_VIEWBOX.h - mapView.h;
+  mapView.x = Math.min(maxX, Math.max(BASE_VIEWBOX.x, mapView.x));
+  mapView.y = Math.min(maxY, Math.max(BASE_VIEWBOX.y, mapView.y));
+}
+
+function zoomMapAt(factor, cx, cy) {
+  // cx, cy: punkt ogniskowy w bieżących współrzędnych SVG (jeśli brak, użyj środka)
+  const newW = BASE_VIEWBOX.w / Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentZoom * factor));
+  const newZoom = BASE_VIEWBOX.w / newW;
+  const clampedZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newZoom));
+  const newWClamped = BASE_VIEWBOX.w / clampedZoom;
+  const newH = BASE_VIEWBOX.h / clampedZoom;
+
+  const focusX = cx !== undefined ? cx : mapView.x + mapView.w / 2;
+  const focusY = cy !== undefined ? cy : mapView.y + mapView.h / 2;
+  const ratioX = (focusX - mapView.x) / mapView.w;
+  const ratioY = (focusY - mapView.y) / mapView.h;
+
+  mapView.w = newWClamped;
+  mapView.h = newH;
+  mapView.x = focusX - ratioX * newWClamped;
+  mapView.y = focusY - ratioY * newH;
+  currentZoom = clampedZoom;
+  clampMapView();
+  applyMapView();
+}
+
+function resetMapView() {
+  mapView = { ...BASE_VIEWBOX };
+  currentZoom = 1;
+  applyMapView();
+}
+
+function svgPointFromClient(clientX, clientY) {
+  const rect = svgEl.getBoundingClientRect();
+  const x = mapView.x + ((clientX - rect.left) / rect.width) * mapView.w;
+  const y = mapView.y + ((clientY - rect.top) / rect.height) * mapView.h;
+  return { x, y };
+}
+
+document.getElementById("zoom-in").addEventListener("click", () => zoomMapAt(1.5));
+document.getElementById("zoom-out").addEventListener("click", () => zoomMapAt(1 / 1.5));
+document.getElementById("zoom-reset").addEventListener("click", resetMapView);
+
+// scroll / trackpad zoom
+svgEl.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const pt = svgPointFromClient(e.clientX, e.clientY);
+  const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+  zoomMapAt(factor, pt.x, pt.y);
+}, { passive: false });
+
+// przeciąganie myszą (pan) gdy przybliżone
+let isPanning = false;
+let panStart = null;
+let viewStart = null;
+
+svgEl.addEventListener("mousedown", (e) => {
+  if (currentZoom <= 1.001) return;
+  isPanning = true;
+  svgEl.classList.add("dragging");
+  panStart = { x: e.clientX, y: e.clientY };
+  viewStart = { x: mapView.x, y: mapView.y };
+});
+window.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
+  const rect = svgEl.getBoundingClientRect();
+  const dx = (e.clientX - panStart.x) / rect.width * mapView.w;
+  const dy = (e.clientY - panStart.y) / rect.height * mapView.h;
+  mapView.x = viewStart.x - dx;
+  mapView.y = viewStart.y - dy;
+  clampMapView();
+  applyMapView();
+});
+window.addEventListener("mouseup", () => {
+  isPanning = false;
+  svgEl.classList.remove("dragging");
+});
+
+// pinch-to-zoom i przeciąganie na dotyk
+let touchState = null; // { mode:'pan'|'pinch', ... }
+
+svgEl.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1 && currentZoom > 1.001) {
+    touchState = {
+      mode: "pan",
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY,
+      viewX: mapView.x,
+      viewY: mapView.y,
+    };
+  } else if (e.touches.length === 2) {
+    const [t1, t2] = e.touches;
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const midClientX = (t1.clientX + t2.clientX) / 2;
+    const midClientY = (t1.clientY + t2.clientY) / 2;
+    const mid = svgPointFromClient(midClientX, midClientY);
+    touchState = {
+      mode: "pinch",
+      startDist: dist,
+      startZoom: currentZoom,
+      focusX: mid.x,
+      focusY: mid.y,
+    };
+    e.preventDefault();
+  }
+}, { passive: false });
+
+svgEl.addEventListener("touchmove", (e) => {
+  if (!touchState) return;
+  if (touchState.mode === "pan" && e.touches.length === 1) {
+    const rect = svgEl.getBoundingClientRect();
+    const dx = (e.touches[0].clientX - touchState.startX) / rect.width * mapView.w;
+    const dy = (e.touches[0].clientY - touchState.startY) / rect.height * mapView.h;
+    mapView.x = touchState.viewX - dx;
+    mapView.y = touchState.viewY - dy;
+    clampMapView();
+    applyMapView();
+    e.preventDefault();
+  } else if (touchState.mode === "pinch" && e.touches.length === 2) {
+    const [t1, t2] = e.touches;
+    const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const factor = dist / touchState.startDist;
+    const targetZoom = touchState.startZoom * factor;
+    currentZoom = touchState.startZoom; // reset base for zoomMapAt computation
+    zoomMapAt(targetZoom / touchState.startZoom, touchState.focusX, touchState.focusY);
+    e.preventDefault();
+  }
+}, { passive: false });
+
+svgEl.addEventListener("touchend", (e) => {
+  if (e.touches.length === 0) touchState = null;
+  else if (e.touches.length === 1) touchState = null;
+});
+
+let countriesGameState = null; // { mode, queue, index, currentCode, correctCount, wrongCount, firstTryCorrect, wrongAttemptedForCurrent }
+
+function initCountriesGame(mode) {
+  const queue = shuffle(ALL_CODES);
+  countriesGameState = {
+    mode, // 'elimination' | 'forward'
+    queue,
+    index: 0,
+    correctCount: 0,
+    wrongCount: 0,
+    firstTryCorrectCount: 0,
+    wrongAttemptedForCurrent: false,
+  };
+  // reset visual state of all countries
+  Object.values(countryPaths).forEach(el => {
+    el.classList.remove("wrong-flash", "correct-flash");
+  });
+  Object.values(clickTargets).forEach(el => {
+    el.classList.remove("disabled");
+  });
+  correctEl.textContent = "0";
+  wrongEl.textContent = "0";
+  resetMapView();
+  updateCountriesProgress();
+  nextCountryQuestion();
+  showScreen("countriesGame");
+}
+
+function updateCountriesProgress() {
+  progressEl.textContent = `${countriesGameState.index}/${countriesGameState.queue.length}`;
+}
+
+function nextCountryQuestion() {
+  const state = countriesGameState;
+  if (state.index >= state.queue.length) {
+    finishCountriesGame();
+    return;
+  }
+  state.currentCode = state.queue[state.index];
+  state.wrongAttemptedForCurrent = false;
+  targetEl.textContent = COUNTRY_NAMES[state.currentCode];
+  updateCountriesProgress();
+}
+
+function showMapFeedback(text, ok) {
+  feedbackEl.textContent = text;
+  feedbackEl.classList.remove("ok", "bad");
+  feedbackEl.classList.add(ok ? "ok" : "bad", "show");
+  clearTimeout(showMapFeedback._t);
+  showMapFeedback._t = setTimeout(() => {
+    feedbackEl.classList.remove("show");
+  }, 850);
+}
+
+function handleCountryClick(code) {
+  const state = countriesGameState;
+  if (!state) return;
+  const el = countryPaths[code];
+  const isCorrect = code === state.currentCode;
+
+  if (isCorrect) {
+    state.correctCount++;
+    correctEl.textContent = state.correctCount;
+    if (!state.wrongAttemptedForCurrent) {
+      state.firstTryCorrectCount++;
+    }
+    el.classList.add("correct-flash");
+    showMapFeedback(`Tak! To ${COUNTRY_NAMES[code]}`, true);
+
+    setTimeout(() => {
+      el.classList.remove("correct-flash");
+      // w trybie eliminacji: przywróć kolor krajom oznaczonym na czerwono i odblokuj je
+      if (state.mode === "elimination") {
+        Object.values(countryPaths).forEach(p => p.classList.remove("wrong-flash"));
+        Object.values(clickTargets).forEach(t => t.classList.remove("disabled"));
+      }
+      state.index++;
+      nextCountryQuestion();
+    }, 500);
+  } else {
+    state.wrongCount++;
+    wrongEl.textContent = state.wrongCount;
+    state.wrongAttemptedForCurrent = true;
+    showMapFeedback(`To ${COUNTRY_NAMES[code]}, spróbuj dalej`, false);
+
+    if (state.mode === "elimination") {
+      el.classList.add("wrong-flash");
+      clickTargets[code].classList.add("disabled");
+      // zostaje czerwony i wyłączony aż do trafienia poprawnej odpowiedzi
+    } else {
+      // forward: krótki czerwony błysk, potem przechodzimy dalej
+      el.classList.add("wrong-flash");
+      setTimeout(() => {
+        el.classList.remove("wrong-flash");
+        state.index++;
+        nextCountryQuestion();
+      }, 500);
+    }
+  }
+}
+
+Object.entries(clickTargets).forEach(([code, target]) => {
+  target.addEventListener("click", () => handleCountryClick(code));
+  target.addEventListener("mousemove", (e) => {
+    const rect = mapWrap.getBoundingClientRect();
+    tooltipEl.style.left = `${e.clientX - rect.left}px`;
+    tooltipEl.style.top = `${e.clientY - rect.top}px`;
+  });
+  target.addEventListener("mouseenter", () => {
+    tooltipEl.textContent = COUNTRY_NAMES[code];
+    tooltipEl.classList.add("show");
+  });
+  target.addEventListener("mouseleave", () => {
+    tooltipEl.classList.remove("show");
+  });
+});
+
+function finishCountriesGame() {
+  const state = countriesGameState;
+  const total = state.queue.length;
+  const pct = Math.round((state.firstTryCorrectCount / total) * 100);
+  document.getElementById("c-final-score").textContent = `${pct}%`;
+  document.getElementById("c-final-detail").textContent =
+    `${state.firstTryCorrectCount} z ${total} poprawnie za pierwszym razem`;
+  showScreen("countriesEnd");
+}
+
+document.getElementById("mode-elimination").addEventListener("click", () => initCountriesGame("elimination"));
+document.getElementById("mode-forward").addEventListener("click", () => initCountriesGame("forward"));
+document.getElementById("c-replay").addEventListener("click", () => initCountriesGame(countriesGameState.mode));
+document.getElementById("c-home").addEventListener("click", () => { navStack = ["home"]; showScreen("home", { pushHistory: false }); });
+
+// ============================================================
+// STOLICE — TRYB NAUKI (fiszki)
+// ============================================================
+let learnState = null; // { queue, index }
+
+function initLearnMode() {
+  learnState = {
+    queue: shuffle(ALL_CODES),
+    index: 0,
+  };
+  renderLearnCard();
+  showScreen("capitalsLearn");
+}
+
+function renderLearnCard() {
+  const { queue, index } = learnState;
+  const code = queue[index];
+  document.getElementById("l-country").textContent = COUNTRY_NAMES[code];
+  document.getElementById("l-capital").textContent = CAPITALS[code];
+  document.getElementById("l-progress").textContent = `${index + 1}/${queue.length}`;
+  const card = document.getElementById("l-card");
+  card.classList.remove("flipped");
+}
+
+document.getElementById("l-card").addEventListener("click", function () {
+  this.classList.toggle("flipped");
+});
+
+document.getElementById("l-next").addEventListener("click", () => {
+  learnState.index = (learnState.index + 1) % learnState.queue.length;
+  renderLearnCard();
+});
+document.getElementById("l-prev").addEventListener("click", () => {
+  learnState.index = (learnState.index - 1 + learnState.queue.length) % learnState.queue.length;
+  renderLearnCard();
+});
+
+document.getElementById("mode-learn").addEventListener("click", initLearnMode);
+
+// ============================================================
+// STOLICE — TRYB ODPOWIEDZI (wpisywanie)
+// ============================================================
+let testState = null; // { queue, index, correctCount, wrongCount }
+
+function initTestMode() {
+  testState = {
+    queue: shuffle(ALL_CODES),
+    index: 0,
+    correctCount: 0,
+    wrongCount: 0,
+  };
+  document.getElementById("t-correct").textContent = "0";
+  document.getElementById("t-wrong").textContent = "0";
+  renderTestQuestion();
+  showScreen("capitalsTest");
+}
+
+const tInput = document.getElementById("t-input");
+const tFeedback = document.getElementById("t-feedback");
+
+function renderTestQuestion() {
+  const { queue, index } = testState;
+  const code = queue[index];
+  document.getElementById("t-country").textContent = COUNTRY_NAMES[code];
+  document.getElementById("t-progress").textContent = `${index}/${queue.length}`;
+  tInput.value = "";
+  tInput.classList.remove("correct", "wrong");
+  tFeedback.textContent = "";
+  tFeedback.classList.remove("ok", "bad");
+  tInput.disabled = false;
+  setTimeout(() => tInput.focus(), 50);
+}
+
+document.getElementById("t-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const state = testState;
+  if (!state || tInput.disabled) return;
+
+  const code = state.queue[state.index];
+  const correctAnswer = CAPITALS[code];
+  const userAnswer = tInput.value;
+  const isCorrect = normalizeAnswer(userAnswer) === normalizeAnswer(correctAnswer);
+
+  tInput.disabled = true;
+
+  if (isCorrect) {
+    state.correctCount++;
+    document.getElementById("t-correct").textContent = state.correctCount;
+    tInput.classList.add("correct");
+    tFeedback.textContent = "Poprawnie!";
+    tFeedback.classList.add("ok");
+  } else {
+    state.wrongCount++;
+    document.getElementById("t-wrong").textContent = state.wrongCount;
+    tInput.classList.add("wrong");
+    tFeedback.textContent = `Poprawna odpowiedź: ${correctAnswer}`;
+    tFeedback.classList.add("bad");
+  }
+
+  setTimeout(() => {
+    state.index++;
+    if (state.index >= state.queue.length) {
+      finishTestMode();
+    } else {
+      renderTestQuestion();
+    }
+  }, 1100);
+});
+
+function finishTestMode() {
+  const state = testState;
+  const total = state.queue.length;
+  const pct = Math.round((state.correctCount / total) * 100);
+  document.getElementById("t-final-score").textContent = `${pct}%`;
+  document.getElementById("t-final-detail").textContent =
+    `${state.correctCount} z ${total} poprawnych odpowiedzi`;
+  showScreen("testEnd");
+}
+
+document.getElementById("mode-test").addEventListener("click", initTestMode);
+document.getElementById("t-replay").addEventListener("click", initTestMode);
+document.getElementById("t-home").addEventListener("click", () => { navStack = ["home"]; showScreen("home", { pushHistory: false }); });
+
+// ============================================================
+// WYCINEK — wspólne: przygotowanie przybliżonego kadru mapy dla kraju
+// ============================================================
+
+// Kraje bez własnego kształtu (mikropaństwa - tylko kropka) wykluczamy
+// z trybu Wycinek, bo wycięty fragment mapy nic by nie pokazał.
+const SNIPPET_CODES = ALL_CODES.filter(code => !MICRO_STATES.has(code));
+
+const snippetBBoxCache = {};
+
+function getCountryBBox(code) {
+  if (snippetBBoxCache[code]) return snippetBBoxCache[code];
+  const el = countryPaths[code];
+  let bbox = el.getBBox();
+  // Niektóre przeglądarki zwracają zerowy bbox, gdy element leży wewnątrz
+  // ekranu ukrytego przez display:none. W takim wypadku tymczasowo
+  // wymuszamy widoczność ekranu z mapą, żeby odczytać poprawną geometrię.
+  if (!bbox || (bbox.width === 0 && bbox.height === 0)) {
+    const screenEl = document.getElementById("screen-countries-game");
+    const hadActive = screenEl.classList.contains("active");
+    const prevDisplay = screenEl.style.display;
+    if (!hadActive) {
+      screenEl.style.display = "flex";
+    }
+    bbox = el.getBBox();
+    if (!hadActive) {
+      screenEl.style.display = prevDisplay;
+    }
+  }
+  snippetBBoxCache[code] = bbox;
+  return bbox;
+}
+
+// Buduje znacznik <svg> z wyciętym, przybliżonym fragmentem mapy wokół danego kraju.
+// Docelowy SVG ma stały viewBox "0 0 219 214" (taki sam kształt jak główna mapa),
+// więc kadrujemy oryginalne dane tak, by wybrany kraj wypełniał znaczną część kadru,
+// z pewnym marginesem kontekstu (sąsiednie kraje częściowo widoczne).
+function buildSnippetSVG(targetSvgEl, code) {
+  const bbox = getCountryBBox(code);
+  const marginFactor = 0.9; // margines wokół kraju = 90% jego własnego wymiaru z każdej strony
+  const padX = Math.max(bbox.width * marginFactor, 3);
+  const padY = Math.max(bbox.height * marginFactor, 3);
+
+  let cropW = bbox.width + padX * 2;
+  let cropH = bbox.height + padY * 2;
+
+  // utrzymaj proporcje kadru zbliżone do 219:214 (prawie kwadrat), żeby uniknąć
+  // nadmiernego rozciągania - dopasuj krótszy bok
+  const targetRatio = 219 / 214;
+  const cropRatio = cropW / cropH;
+  if (cropRatio > targetRatio) {
+    cropH = cropW / targetRatio;
+  } else {
+    cropW = cropH * targetRatio;
+  }
+
+  const cx = bbox.x + bbox.width / 2;
+  const cy = bbox.y + bbox.height / 2;
+  const cropX = cx - cropW / 2;
+  const cropY = cy - cropH / 2;
+
+  targetSvgEl.setAttribute("viewBox", `${cropX} ${cropY} ${cropW} ${cropH}`);
+  targetSvgEl.innerHTML = "";
+
+  // sklonuj wszystkie kształty krajów (bez interakcji) do wycinka
+  ALL_CODES.forEach(c => {
+    const src = countryPaths[c];
+    if (!src) return;
+    const clone = src.cloneNode(true);
+    clone.removeAttribute("id");
+    clone.classList.remove("correct-flash", "wrong-flash", "disabled");
+    clone.classList.add("country");
+    if (c === code) clone.classList.add("snippet-target");
+    targetSvgEl.appendChild(clone);
+  });
+}
+
+// ============================================================
+// WYCINEK — TRYB NAUKI (fiszki z fragmentem mapy)
+// ============================================================
+let snippetLearnState = null; // { queue, index }
+
+function initSnippetLearnMode() {
+  snippetLearnState = {
+    queue: shuffle(SNIPPET_CODES),
+    index: 0,
+  };
+  renderSnippetLearnCard();
+  showScreen("snippetLearn");
+}
+
+function renderSnippetLearnCard() {
+  const { queue, index } = snippetLearnState;
+  const code = queue[index];
+  buildSnippetSVG(document.getElementById("sl-svg-front"), code);
+  document.getElementById("sl-country").textContent = COUNTRY_NAMES[code];
+  document.getElementById("sl-progress").textContent = `${index + 1}/${queue.length}`;
+  const card = document.getElementById("sl-card");
+  card.classList.remove("flipped");
+}
+
+document.getElementById("sl-card").addEventListener("click", function () {
+  this.classList.toggle("flipped");
+});
+
+document.getElementById("sl-next").addEventListener("click", () => {
+  snippetLearnState.index = (snippetLearnState.index + 1) % snippetLearnState.queue.length;
+  renderSnippetLearnCard();
+});
+document.getElementById("sl-prev").addEventListener("click", () => {
+  snippetLearnState.index = (snippetLearnState.index - 1 + snippetLearnState.queue.length) % snippetLearnState.queue.length;
+  renderSnippetLearnCard();
+});
+
+document.getElementById("mode-snippet-learn").addEventListener("click", initSnippetLearnMode);
+
+// ============================================================
+// WYCINEK — TRYB ODPOWIEDZI (wpisywanie nazwy państwa)
+// ============================================================
+let snippetTestState = null; // { queue, index, correctCount, wrongCount }
+
+function initSnippetTestMode() {
+  snippetTestState = {
+    queue: shuffle(SNIPPET_CODES),
+    index: 0,
+    correctCount: 0,
+    wrongCount: 0,
+  };
+  document.getElementById("st-correct").textContent = "0";
+  document.getElementById("st-wrong").textContent = "0";
+  renderSnippetTestQuestion();
+  showScreen("snippetTest");
+}
+
+const stInput = document.getElementById("st-input");
+const stFeedback = document.getElementById("st-feedback");
+
+function renderSnippetTestQuestion() {
+  const { queue, index } = snippetTestState;
+  const code = queue[index];
+  buildSnippetSVG(document.getElementById("st-svg"), code);
+  document.getElementById("st-progress").textContent = `${index}/${queue.length}`;
+  stInput.value = "";
+  stInput.classList.remove("correct", "wrong");
+  stFeedback.textContent = "";
+  stFeedback.classList.remove("ok", "bad");
+  stInput.disabled = false;
+  setTimeout(() => stInput.focus(), 50);
+}
+
+document.getElementById("st-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const state = snippetTestState;
+  if (!state || stInput.disabled) return;
+
+  const code = state.queue[state.index];
+  const correctAnswer = COUNTRY_NAMES[code];
+  const userAnswer = stInput.value;
+  const isCorrect = normalizeAnswer(userAnswer) === normalizeAnswer(correctAnswer);
+
+  stInput.disabled = true;
+
+  if (isCorrect) {
+    state.correctCount++;
+    document.getElementById("st-correct").textContent = state.correctCount;
+    stInput.classList.add("correct");
+    stFeedback.textContent = "Poprawnie!";
+    stFeedback.classList.add("ok");
+  } else {
+    state.wrongCount++;
+    document.getElementById("st-wrong").textContent = state.wrongCount;
+    stInput.classList.add("wrong");
+    stFeedback.textContent = `Poprawna odpowiedź: ${correctAnswer}`;
+    stFeedback.classList.add("bad");
+  }
+
+  setTimeout(() => {
+    state.index++;
+    if (state.index >= state.queue.length) {
+      finishSnippetTestMode();
+    } else {
+      renderSnippetTestQuestion();
+    }
+  }, 1100);
+});
+
+function finishSnippetTestMode() {
+  const state = snippetTestState;
+  const total = state.queue.length;
+  const pct = Math.round((state.correctCount / total) * 100);
+  document.getElementById("st-final-score").textContent = `${pct}%`;
+  document.getElementById("st-final-detail").textContent =
+    `${state.correctCount} z ${total} poprawnych odpowiedzi`;
+  showScreen("snippetEnd");
+}
+
+document.getElementById("mode-snippet-test").addEventListener("click", initSnippetTestMode);
+document.getElementById("st-replay").addEventListener("click", initSnippetTestMode);
+document.getElementById("st-home").addEventListener("click", () => { navStack = ["home"]; showScreen("home", { pushHistory: false }); });
+
+</script>
+</body>
+</html>
