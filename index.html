@@ -1372,11 +1372,28 @@ function initLearnMode() {
 function renderLearnCard() {
   const { queue, index } = learnState;
   const code = queue[index];
-  document.getElementById("l-country").textContent = COUNTRY_NAMES[code];
-  document.getElementById("l-capital").textContent = CAPITALS[code];
-  document.getElementById("l-progress").textContent = `${index + 1}/${queue.length}`;
   const card = document.getElementById("l-card");
-  card.classList.remove("flipped");
+
+  const swapContent = () => {
+    document.getElementById("l-country").textContent = COUNTRY_NAMES[code];
+    document.getElementById("l-capital").textContent = CAPITALS[code];
+    document.getElementById("l-progress").textContent = `${index + 1}/${queue.length}`;
+  };
+
+  if (card.classList.contains("flipped")) {
+    // karta jest odwrócona: najpierw obróć z powrotem na przód,
+    // a dopiero po zakończeniu animacji podmień treść na nowe pytanie
+    card.classList.remove("flipped");
+    const inner = card.querySelector(".flash-card-inner");
+    const onDone = (e) => {
+      if (e.target !== inner) return;
+      inner.removeEventListener("transitionend", onDone);
+      swapContent();
+    };
+    inner.addEventListener("transitionend", onDone);
+  } else {
+    swapContent();
+  }
 }
 
 document.getElementById("l-card").addEventListener("click", function () {
@@ -1572,11 +1589,28 @@ function initSnippetLearnMode() {
 function renderSnippetLearnCard() {
   const { queue, index } = snippetLearnState;
   const code = queue[index];
-  buildSnippetSVG(document.getElementById("sl-svg-front"), code);
-  document.getElementById("sl-country").textContent = COUNTRY_NAMES[code];
-  document.getElementById("sl-progress").textContent = `${index + 1}/${queue.length}`;
   const card = document.getElementById("sl-card");
-  card.classList.remove("flipped");
+
+  const swapContent = () => {
+    buildSnippetSVG(document.getElementById("sl-svg-front"), code);
+    document.getElementById("sl-country").textContent = COUNTRY_NAMES[code];
+    document.getElementById("sl-progress").textContent = `${index + 1}/${queue.length}`;
+  };
+
+  if (card.classList.contains("flipped")) {
+    // karta jest odwrócona: najpierw obróć z powrotem na przód,
+    // a dopiero po zakończeniu animacji podmień wycinek mapy i nazwę
+    card.classList.remove("flipped");
+    const inner = card.querySelector(".flash-card-inner");
+    const onDone = (e) => {
+      if (e.target !== inner) return;
+      inner.removeEventListener("transitionend", onDone);
+      swapContent();
+    };
+    inner.addEventListener("transitionend", onDone);
+  } else {
+    swapContent();
+  }
 }
 
 document.getElementById("sl-card").addEventListener("click", function () {
