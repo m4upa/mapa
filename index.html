@@ -606,6 +606,16 @@
     .game-header{ flex-direction:column; align-items:stretch; }
     .score-box{ justify-content:space-between; }
   }
+  .learn-controls{ position:absolute; left:14px; bottom:14px; display:none; gap:8px; z-index:6; }
+  .learn-controls.show{ display:flex; }
+  .learn-btn{
+    font: inherit; font-weight:600; padding:9px 16px; border-radius:10px;
+    border:1px solid rgba(15,23,34,0.2); background:#fff; color:#0f1722;
+    cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  }
+  .learn-btn:hover{ filter:brightness(0.96); }
+  .learn-btn:active{ transform:scale(0.96); }
+  .learn-btn[hidden]{ display:none; }
 </style>
 </head>
 <body>
@@ -716,6 +726,10 @@
     <div class="map-wrap">
       <div class="map-feedback" id="c-feedback"></div>
       <div class="map-tooltip" id="c-tooltip"></div>
+      <div class="learn-controls" id="learn-controls">
+        <button class="learn-btn" id="learn-show" type="button">Pokaż</button>
+        <button class="learn-btn" id="learn-next" type="button" hidden>Dalej</button>
+      </div>
       <div class="map-zoom-controls">
         <button class="zoom-btn" id="zoom-in" type="button" aria-label="Przybliż">+</button>
         <button class="zoom-btn" id="zoom-out" type="button" aria-label="Oddal">&minus;</button>
@@ -1405,6 +1419,7 @@ svgEl.addEventListener("touchend", (e) => {
 let countriesGameState = null; // { mode, queue, index, currentCode, correctCount, wrongCount, firstTryCorrect, wrongAttemptedForCurrent }
 
 function initCountriesGame(mode) {
+  document.getElementById("learn-controls").classList.toggle("show", mode === "learn");
   const queue = shuffle(ALL_CODES);
   countriesGameState = {
     mode, // 'elimination' | 'forward'
@@ -1460,13 +1475,14 @@ function showMapFeedback(text, ok) {
 }
 
 // ============================================================
-// PAŃSTWA — TRYB NAUKI (odległość, sąsiedztwo, 5 strzałów)
+// PAŃSTWA — TRYB NAUKI (odległość, kierunek, pokaż)
 // ============================================================
-const LEARN_MAX_SHOTS = 5;
 const LEARN_NEAR_GAP = 1.5; // mniejsza odległość między krawędziami = sąsiedztwo
+const LEARN_WHITE = [255, 255, 255];
+const LEARN_LIGHT = [249, 211, 198];
+const LEARN_DEEP = [163, 48, 26];
 const learnGeoCache = {};
 
-// Wierzchołki kształtu państwa i jego środek (z wierzchołków, bez getBBox)
 function learnGeometry(code) {
   const key = currentContinent + ":" + code;
   if (learnGeoCache[key]) return learnGeoCache[key];
@@ -1480,20 +1496,18 @@ function learnGeometry(code) {
     let m;
     while ((m = re.exec(d))) pts.push([+m[1], +m[2]]);
   }
-  const center = (arr, i) => {
-    const vals = arr.map(p => p[i]);
-    return (Math.min(...vals) + Math.max(...vals)) / 2;
-  };
-  const cx = center(pts, 0), cy = center(pts, 1);
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const b = { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  const geo = { ...b, cx: (b.minX + b.maxX) / 2, cy: (b.minY + b.maxY) / 2 };
   if (pts.length > 350) {
     const step = Math.ceil(pts.length / 350);
     pts = pts.filter((_, i) => i % step === 0);
   }
-  learnGeoCache[key] = { cx, cy, pts };
-  return learnGeoCache[key];
+  geo.pts = pts;
+  learnGeoCache[key] = geo;
+  return geo;
 }
 
-// Najmniejsza odległość między wierzchołkami dwóch państw
 function learnGap(a, b) {
   let best = Infinity;
   for (const [x1, y1] of a.pts) {
@@ -1503,6 +1517,35 @@ function learnGap(a, b) {
     }
   }
   return best;
+}
+
+function mixRGB(a, b, t) {
+  return a.map((v, i) => Math.round(v + (b[i] - v) * t));
+}
+function rgbStr(c) {
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+// Sąsiedzi: biały. Pozostałe: od jasnej do ciemnej czerwieni wg odległości
+function learnRGB(info) {
+  if (info.near) return LEARN_WHITE;
+  return mixRGB(LEARN_LIGHT, LEARN_DEEP, Math.pow(info.t, 0.8));
+}
+
+function learnLabel(info) {
+  if (info.near) return "obok";
+  if (info.t < 0.3) return "blisko";
+  if (info.t < 0.6) return "daleko";
+  return "bardzo daleko";
+}
+
+function setLearnButtons(canReveal, canNext) {
+  document.getElementById("learn-show").hidden = !canReveal;
+  document.getElementById("learn-next").hidden = !canNext;
+}
+
+function setAllCountriesDisabled(disabled) {
+  Object.values(clickTargets).forEach(t => t.classList.toggle("disabled", disabled));
 }
 
 function prepareLearnQuestion(state) {
@@ -1526,29 +1569,38 @@ function prepareLearnQuestion(state) {
 
   state.learnInfo = info;
   state.learnClicked = new Set();
-  state.shotsForCurrent = 0;
   state.busy = false;
+  setLearnButtons(true, false);
 }
 
-// Kolor: sąsiedzi białe, dalej im ciemniej (czerwień), bliżej im jaśniej
-function learnColor(info) {
-  if (info.near) return "#ffffff";
-  const light = [249, 211, 198];
-  const deep = [163, 48, 26];
-  const t = Math.pow(info.t, 0.8);
-  const c = light.map((v, i) => Math.round(v + (deep[i] - v) * t));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
+function animateMapViewTo(cx, cy, w, duration) {
+  const aspect = BASE_VIEWBOX.h / BASE_VIEWBOX.w;
+  const h = w * aspect;
+  const start = { x: mapView.x, y: mapView.y, w: mapView.w, h: mapView.h };
+  const end = { x: cx - w / 2, y: cy - h / 2, w, h };
+  const t0 = performance.now();
+  function step(now) {
+    const k = Math.min(1, (now - t0) / duration);
+    const e = 1 - Math.pow(1 - k, 3);
+    mapView.x = start.x + (end.x - start.x) * e;
+    mapView.y = start.y + (end.y - start.y) * e;
+    mapView.w = start.w + (end.w - start.w) * e;
+    mapView.h = start.h + (end.h - start.h) * e;
+    currentZoom = BASE_VIEWBOX.w / mapView.w;
+    clampMapView();
+    applyMapView();
+    if (k < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
-function learnLabel(info) {
-  if (info.near) return "obok";
-  if (info.t < 0.3) return "blisko";
-  if (info.t < 0.6) return "daleko";
-  return "bardzo daleko";
-}
-
-function setAllCountriesDisabled(disabled) {
-  Object.values(clickTargets).forEach(t => t.classList.toggle("disabled", disabled));
+function learnAdvance(state) {
+  setLearnButtons(false, false);
+  const el = countryPaths[state.currentCode];
+  if (el) el.classList.remove("correct-flash");
+  resetMapView();
+  state.index++;
+  nextCountryQuestion();
 }
 
 function handleLearnClick(code) {
@@ -1557,8 +1609,6 @@ function handleLearnClick(code) {
   const el = countryPaths[code];
   const target = state.currentCode;
   state.learnClicked.add(code);
-  state.shotsForCurrent++;
-  const shots = state.shotsForCurrent;
 
   if (code === target) {
     state.busy = true;
@@ -1567,36 +1617,43 @@ function handleLearnClick(code) {
     correctEl.textContent = state.correctCount;
     el.classList.add("correct-flash");
     setAllCountriesDisabled(true);
+    setLearnButtons(false, false);
     showMapFeedback(`Tak! To ${COUNTRY_NAMES[code]}`, true);
-    setTimeout(() => {
-      el.classList.remove("correct-flash");
-      state.index++;
-      nextCountryQuestion();
-    }, 900);
+    setTimeout(() => learnAdvance(state), 900);
     return;
   }
 
   const info = state.learnInfo[code];
   state.wrongCount++;
   wrongEl.textContent = state.wrongCount;
-  el.style.fill = learnColor(info);
+  const rgb = learnRGB(info);
+  el.style.fill = rgbStr(rgb);
   clickTargets[code].classList.add("disabled");
-
-  if (shots >= LEARN_MAX_SHOTS) {
-    state.busy = true;
-    const targetEl = countryPaths[target];
-    targetEl.classList.add("correct-flash");
-    setAllCountriesDisabled(true);
-    showMapFeedback(`To ${COUNTRY_NAMES[target]}`, false);
-    setTimeout(() => {
-      targetEl.classList.remove("correct-flash");
-      state.index++;
-      nextCountryQuestion();
-    }, 1600);
-  } else {
-    showMapFeedback(`${COUNTRY_NAMES[code]}: ${learnLabel(info)} · strzał ${shots}/${LEARN_MAX_SHOTS}`, false);
-  }
+  showMapFeedback(`${COUNTRY_NAMES[code]}: ${learnLabel(info)}`, false);
 }
+
+function learnReveal() {
+  const state = countriesGameState;
+  if (!state || state.mode !== "learn" || state.busy) return;
+  state.busy = true;
+  const target = state.currentCode;
+  countryPaths[target].classList.add("correct-flash");
+  setAllCountriesDisabled(true);
+  const g = learnGeometry(target);
+  const aspect = BASE_VIEWBOX.h / BASE_VIEWBOX.w;
+  let w = Math.max(g.maxX - g.minX, (g.maxY - g.minY) / aspect) * 2.6;
+  w = Math.min(BASE_VIEWBOX.w, Math.max(BASE_VIEWBOX.w / MAX_ZOOM, w));
+  animateMapViewTo(g.cx, g.cy, w, 600);
+  showMapFeedback(`To ${COUNTRY_NAMES[target]}`, true);
+  setLearnButtons(false, true);
+}
+
+document.getElementById("learn-show").addEventListener("click", learnReveal);
+document.getElementById("learn-next").addEventListener("click", () => {
+  const state = countriesGameState;
+  if (!state || state.mode !== "learn" || !state.busy) return;
+  learnAdvance(state);
+});
 
 function handleCountryClick(code) {
   const state = countriesGameState;
@@ -1672,7 +1729,7 @@ function finishCountriesGame() {
   const pct = Math.round((good / total) * 100);
   document.getElementById("c-final-score").textContent = `${pct}%`;
   document.getElementById("c-final-detail").textContent = isLearn
-    ? `${good} z ${total} znalezionych w ${LEARN_MAX_SHOTS} strzałach`
+    ? `${good} z ${total} znalezionych`
     : `${good} z ${total} poprawnie za pierwszym razem`;
   showScreen("countriesEnd");
 }
@@ -1688,12 +1745,15 @@ document.getElementById("c-home").addEventListener("click", () => { showScreen("
 // ============================================================
 // Stolice Azji, które w trybie Europy są najtrudniejsze - wykluczone z quizu stolic
 // tylko dla Europy (w Azji zostają). Mapa i quiz państw nadal zawierają te kraje.
-const EUROPE_HARD_CAPITALS = new Set(["AM", "AZ", "CY", "GE", "RU", "TR"]);
+// Najtrudniejsze stolice usunięte z quizów stolic (osobno dla każdego kontynentu).
+const HARD_CAPITALS = {
+  europe: new Set(["AM", "AZ", "CY", "GE", "RU", "TR"]),
+  asia: new Set(["AM", "AZ", "CY", "GE", "BT", "TM", "TJ", "KG", "UZ", "MN", "TL", "BN", "LA", "MM", "MV"]),
+};
 
 function capitalsCodes() {
-  return currentContinent === "europe"
-    ? ALL_CODES.filter(c => !EUROPE_HARD_CAPITALS.has(c))
-    : ALL_CODES;
+  const hard = HARD_CAPITALS[currentContinent];
+  return hard ? ALL_CODES.filter(c => !hard.has(c)) : ALL_CODES;
 }
 
 let learnState = null; // { queue, index }
